@@ -1,0 +1,27 @@
+{
+  "name": "gift-list-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "playwright test",
+    "demo:populate": "node demo/scripts/populate-demo-data.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "autoprefixer": "^10.4.16",
+    "jsdom": "^23.0.1",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "vite": "^5.0.8",
+    "vitest": "^1.0.4"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.5.0"
+  }
+}
