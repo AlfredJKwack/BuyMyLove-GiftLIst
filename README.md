@@ -4,6 +4,8 @@
 
 A mobile-first web application for managing a single gift list with anonymous user interaction and admin controls.
 
+<img width="1169" alt="Screenshot 2025-06-04 at 02 25 12" src="https://github.com/user-attachments/assets/3899701f-6dd6-48e2-aa86-e551bcb7b2eb" />
+
 ## Features
 
 - **Public Access**: Anyone can view the gift list at a fixed URL
