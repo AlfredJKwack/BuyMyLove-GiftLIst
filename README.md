@@ -1,6 +1,6 @@
 # Gift List App
 
-**Version 0.1.0**
+**Version 0.1.1**
 
 A mobile-first web application for managing a single gift list with anonymous user interaction and admin controls.
 
