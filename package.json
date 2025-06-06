@@ -1,27 +1,30 @@
 {
-  "name": "gift-list-app",
+  "name": "buymylove-giftlist",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "playwright test",
-    "demo:populate": "node demo/scripts/populate-demo-data.js"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.38.4",
-    "dotenv": "^16.5.0",
-    "vite": "^5.4.19",
-    "postcss": "^8.4.32",
-    "autoprefixer": "^10.4.16",
-    "tailwindcss": "^3.3.6"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "jsdom": "^23.0.1",
-    "vitest": "^1.0.4"
+    "@playwright/test": "^1.42.1",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@vitest/coverage-v8": "^1.4.0",
+    "autoprefixer": "^10.4.15",
+    "jsdom": "^24.0.0",
+    "postcss": "^8.4.29",
+    "tailwindcss": "^3.3.3",
+    "vite": "^6.3.5",
+    "vitest": "^1.4.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.10"
   }
 }

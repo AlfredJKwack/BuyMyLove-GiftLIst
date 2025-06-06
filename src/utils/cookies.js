@@ -1,37 +1,51 @@
-// Cookie utilities for anonymous user tracking
+/**
+ * Cookie management utilities
+ */
+
+const COOKIE_ID_KEY = 'gift_buyer_id';
+const COOKIE_EXPIRY_DAYS = 365; // 1 year
+
+/**
+ * Get a cookie value by name
+ * @param {string} name - The name of the cookie
+ * @returns {string|null} The cookie value or null if not found
+ */
 export const getCookie = (name) => {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
-  return null
-}
-
-export const setCookie = (name, value, days = 365) => {
-  const expires = new Date()
-  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000))
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`
-}
-
-export const generateUserId = () => {
-  return 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
-}
-
-export const getUserId = () => {
-  let userId = getCookie('gift_list_user_id')
-  if (!userId) {
-    userId = generateUserId()
-    setCookie('gift_list_user_id', userId)
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].trim();
+    if (cookie.startsWith(name + '=')) {
+      return cookie.substring(name.length + 1);
+    }
   }
-  return userId
-}
+  return null;
+};
 
-export const getClientIP = async () => {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json')
-    const data = await response.json()
-    return data.ip
-  } catch (error) {
-    console.warn('Could not get client IP:', error)
-    return 'unknown'
-  }
-}
+/**
+ * Set a cookie
+ * @param {string} name - The name of the cookie
+ * @param {string} value - The value to set
+ * @param {number} days - The number of days until the cookie expires
+ */
+export const setCookie = (name, value, days) => {
+  const date = new Date();
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value};${expires};path=/;SameSite=Lax`;
+};
+
+/**
+ * Get the cookie ID for the current user
+ * @returns {string|null} The cookie ID or null if not set
+ */
+export const getCookieId = () => {
+  return getCookie(COOKIE_ID_KEY);
+};
+
+/**
+ * Set the cookie ID for the current user
+ * @param {string} id - The cookie ID to set
+ */
+export const setCookieId = (id) => {
+  setCookie(COOKIE_ID_KEY, id, COOKIE_EXPIRY_DAYS);
+};
