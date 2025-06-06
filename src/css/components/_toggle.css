@@ -1,0 +1,103 @@
+/* Toggle switch styles */
+.toggle-container {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 1.5rem;
+  background-color: var(--color-gray-200);
+  border-radius: var(--border-radius-full);
+  transition: background-color var(--transition-normal);
+}
+
+.toggle-slider:after {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  background-color: var(--color-white);
+  border-radius: 50%;
+  transition: transform var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-input:checked + .toggle-slider {
+  background-color: var(--color-primary);
+}
+
+.toggle-input:checked + .toggle-slider:after {
+  transform: translateX(1.25rem);
+}
+
+.toggle-input:focus + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.toggle-input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-label {
+  margin-left: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  user-select: none;
+}
+
+/* Legacy toggle styles for backward compatibility */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.25rem;
+  background-color: var(--color-gray-200);
+  border-radius: var(--border-radius-full);
+  transition: background-color var(--transition-normal);
+  cursor: pointer;
+}
+
+.toggle.checked {
+  background-color: var(--color-success);
+}
+
+.toggle-circle {
+  position: absolute;
+  left: 0.125rem;
+  top: 0.125rem;
+  background-color: var(--color-white);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  transition: transform var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle.checked .toggle-circle {
+  transform: translateX(1.25rem);
+}
