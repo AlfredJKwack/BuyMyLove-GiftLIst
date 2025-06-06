@@ -77,7 +77,12 @@ export class GiftList {
     const giftItems = this.gifts.map(gift => this.renderGiftItem(gift)).join('');
     
     this.container.innerHTML = `
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl">Gift List</h2>
+        <p class="text-gray">Click on a gift to view details or mark it as bought.</p>
+      </div>
+      
+      <div class="gift-grid">
         ${giftItems}
       </div>
       ${this.isAdminUser ? '<button id="add-gift-btn" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded fixed bottom-4 right-4 shadow-lg">Add Gift</button>' : ''}
@@ -88,9 +93,9 @@ export class GiftList {
       const giftElement = document.getElementById(`gift-${gift.id}`);
       
       // Toggle bought status
-      const boughtCheckbox = giftElement.querySelector('.bought-checkbox');
-      if (boughtCheckbox) {
-        boughtCheckbox.addEventListener('change', (e) => this.handleToggleBought(gift.id, e.target.checked));
+      const toggleInput = giftElement.querySelector('.toggle-input');
+      if (toggleInput) {
+        toggleInput.addEventListener('change', (e) => this.handleToggleBought(gift.id, e.target.checked));
       }
       
       // Admin actions
@@ -124,44 +129,68 @@ export class GiftList {
     const canToggle = !gift.bought || gift.bought_by_cookie === this.cookieId;
     const dateAdded = new Date(gift.date_added).toLocaleDateString();
     
+    // SVG placeholder markup - exactly as in index.html
+    const svgPlaceholder = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="image-placeholder-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    `;
+    
+    // Admin controls - added to the gift-footer
+    const adminControls = this.isAdminUser ? `
+      <div class="admin-controls">
+        <button class="edit-btn">Edit</button>
+        <button class="delete-btn">Delete</button>
+      </div>
+    ` : '';
+    
     return `
-      <div id="gift-${gift.id}" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 ${gift.bought ? 'border-green-500 border-2' : ''}">
-        ${gift.image_path ? `
-          <div class="h-48 overflow-hidden">
-            <img src="${gift.image_path}" alt="${gift.title}" class="w-full h-full object-cover">
-          </div>
-        ` : ''}
-        
-        <div class="p-4">
-          <div class="flex justify-between items-start">
-            <h3 class="text-lg font-semibold mb-2">
-              <a href="${gift.hyperlink}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline">
-                ${gift.title}
-              </a>
-            </h3>
-            
-            <div class="flex items-center">
-              <label class="inline-flex items-center cursor-pointer ${!canToggle ? 'opacity-50' : ''}">
-                <input type="checkbox" class="bought-checkbox sr-only" ${gift.bought ? 'checked' : ''} ${!canToggle ? 'disabled' : ''}>
-                <div class="relative w-10 h-5 bg-gray-200 rounded-full transition duration-200 ease-in-out ${gift.bought ? 'bg-green-500' : ''}">
-                  <div class="absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out ${gift.bought ? 'transform translate-x-5' : ''}"></div>
-                </div>
-                <span class="ml-2 text-sm text-gray-700">${gift.bought ? 'Bought' : 'Available'}</span>
-              </label>
-            </div>
-          </div>
-          
-          ${gift.note ? `<p class="text-gray-600 mt-2">${gift.note}</p>` : ''}
-          
-          <div class="mt-4 flex justify-between items-center text-sm text-gray-500">
-            <span>Added: ${dateAdded}</span>
-            
-            ${this.isAdminUser ? `
-              <div class="flex space-x-2">
-                <button class="edit-btn text-blue-500 hover:text-blue-700">Edit</button>
-                <button class="delete-btn text-red-500 hover:text-red-700">Delete</button>
+      <div id="gift-${gift.id}" class="gift-card${gift.bought ? ' is-bought' : ''}" data-gift-id="${gift.id}">
+        <!-- Image section -->
+        <div class="gift-card-image">
+          <div class="image-container">
+            ${gift.image_path ? `
+              <img src="${gift.image_path}" alt="${gift.title}" class="gift-image" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+              <!-- Placeholder for when image fails to load -->
+              <div class="image-placeholder" style="display: none;">
+                ${svgPlaceholder}
               </div>
-            ` : ''}
+            ` : `
+              <!-- Placeholder for when image is missing -->
+              <div class="image-placeholder">
+                ${svgPlaceholder}
+              </div>
+            `}
+          </div>
+          
+          <!-- Toggle switch -->
+          <div class="toggle-container mt-4">
+            <label class="toggle-switch">
+              <input type="checkbox" class="toggle-input" data-gift-id="${gift.id}" ${gift.bought ? 'checked' : ''} ${!canToggle ? 'disabled' : ''}>
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">${gift.bought ? 'Bought' : 'Available'}</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Content section -->
+        <div class="gift-card-content">
+          <!-- Title with truncation -->
+          <h3 class="gift-title">
+            <a href="${gift.hyperlink}" target="_blank" title="${gift.title}">
+              ${gift.title}
+            </a>
+          </h3>
+          
+          <!-- Description with truncation -->
+          <p class="gift-description" title="${gift.note || ''}">
+            ${gift.note || ''}
+          </p>
+          
+          <!-- Footer with date -->
+          <div class="gift-footer">
+            <span class="gift-date">Added: ${dateAdded}</span>
+            ${adminControls}
           </div>
         </div>
       </div>
@@ -209,9 +238,9 @@ export class GiftList {
           
           // Re-attach event listeners
           const updatedElement = document.getElementById(`gift-${id}`);
-          const boughtCheckbox = updatedElement.querySelector('.bought-checkbox');
-          if (boughtCheckbox) {
-            boughtCheckbox.addEventListener('change', (e) => this.handleToggleBought(id, e.target.checked));
+          const toggleInput = updatedElement.querySelector('.toggle-input');
+          if (toggleInput) {
+            toggleInput.addEventListener('change', (e) => this.handleToggleBought(id, e.target.checked));
           }
           
           if (this.isAdminUser) {

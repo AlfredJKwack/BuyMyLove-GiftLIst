@@ -35,11 +35,16 @@ export const setCookie = (name, value, days) => {
 };
 
 /**
- * Get the cookie ID for the current user
- * @returns {string|null} The cookie ID or null if not set
+ * Get the cookie ID for the current user, creating one if it doesn't exist
+ * @returns {string} The cookie ID
  */
 export const getCookieId = () => {
-  return getCookie(COOKIE_ID_KEY);
+  let cookieId = getCookie(COOKIE_ID_KEY);
+  if (!cookieId) {
+    cookieId = crypto.randomUUID();
+    setCookie(COOKIE_ID_KEY, cookieId, COOKIE_EXPIRY_DAYS);
+  }
+  return cookieId;
 };
 
 /**
