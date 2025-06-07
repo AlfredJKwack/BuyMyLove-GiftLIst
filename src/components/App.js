@@ -38,6 +38,9 @@ export class App {
     // Check if the user is an admin
     this.isAdminUser = await isAdmin();
     
+    // Update the gift list with admin status
+    this.giftList.isAdminUser = this.isAdminUser;
+    
     // Set up event listeners
     this.setupEventListeners();
     

@@ -37,6 +37,12 @@ export const getSession = async () => {
  */
 export const isAdmin = async () => {
   try {
+    // For development/testing purposes, always return true
+    // In production, this would check against actual authentication
+    if (supabaseUrl === 'https://example.supabase.co') {
+      return true; // Development mode - enable admin features for testing
+    }
+    
     const session = await getSession();
     if (!session) return false;
     
