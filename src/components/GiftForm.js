@@ -70,7 +70,7 @@ export class GiftForm {
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-800">${title}</h2>
-            <button id="close-form-btn" class="text-gray-500 hover:text-gray-700">
+            <button id="close-form-btn" class="btn btn-icon">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -110,19 +110,17 @@ export class GiftForm {
               
               <div class="mt-1 flex items-center">
                 <input type="file" id="gift-image" name="image" accept="image/*"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark">
               </div>
               <p class="mt-1 text-sm text-gray-500">PNG, JPG, GIF up to 5MB</p>
               <div id="image-preview-container"></div>
             </div>
             
-            <div class="flex justify-end space-x-3 pt-4">
-              <button type="button" id="cancel-btn"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <div class="btn-group btn-space-x pt-4 flex justify-end">
+              <button type="button" id="cancel-btn" class="btn btn-secondary">
                 Cancel
               </button>
-              <button type="submit" id="submit-btn"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button type="submit" id="submit-btn" class="btn btn-primary">
                 ${submitText}
               </button>
             </div>

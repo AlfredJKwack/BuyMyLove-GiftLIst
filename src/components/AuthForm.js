@@ -58,7 +58,7 @@ export class AuthForm {
           
           <div>
             <button type="submit" id="login-btn"
-              class="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${this.isLoading ? 'opacity-50 cursor-not-allowed' : ''}">
+              class="btn btn-primary w-full ${this.isLoading ? 'disabled' : ''}">
               ${this.isLoading ? 'Sending Login Link...' : 'Send Login Link'}
             </button>
           </div>
@@ -85,8 +85,7 @@ export class AuthForm {
         
         <p class="text-gray-600 mb-4">You are logged in as an admin and can manage gifts.</p>
         
-        <button id="logout-btn"
-          class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <button id="logout-btn" class="btn btn-secondary w-full">
           Logout
         </button>
       </div>

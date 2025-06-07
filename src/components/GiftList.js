@@ -60,7 +60,7 @@ export class GiftList {
       this.container.innerHTML = `
         <div class="text-center py-10">
           <p class="text-gray-500">No gifts found.</p>
-          ${this.isAdminUser ? '<button id="add-gift-btn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Add a Gift</button>' : ''}
+          ${this.isAdminUser ? '<button id="add-gift-btn" class="btn btn-primary mt-4">Add a Gift</button>' : ''}
         </div>
       `;
       
@@ -85,7 +85,7 @@ export class GiftList {
       <div class="gift-grid">
         ${giftItems}
       </div>
-      ${this.isAdminUser ? '<button id="add-gift-btn" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded fixed bottom-4 right-4 shadow-lg">Add Gift</button>' : ''}
+      ${this.isAdminUser ? '<button id="add-gift-btn" class="btn btn-primary mt-8 fixed bottom-4 right-4 shadow-lg">Add Gift</button>' : ''}
     `;
     
     // Add event listeners
@@ -138,9 +138,9 @@ export class GiftList {
     
     // Admin controls - added to the gift-footer
     const adminControls = this.isAdminUser ? `
-      <div class="admin-controls">
-        <button class="edit-btn">Edit</button>
-        <button class="delete-btn">Delete</button>
+      <div class="admin-controls btn-group btn-space-x">
+        <button class="btn btn-secondary edit-btn">Edit</button>
+        <button class="btn btn-danger delete-btn">Delete</button>
       </div>
     ` : '';
     
