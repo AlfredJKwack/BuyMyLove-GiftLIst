@@ -124,7 +124,7 @@ export class GiftForm {
                 ` : ''}
                 
                 <input type="file" id="gift-image" name="image" accept="image/*"
-                  class="form-input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark">
+                  class="form-input">
                 <p class="mt-1 text-sm color-gray-500">PNG, JPG, GIF up to 5MB</p>
                 <div id="image-preview-container"></div>
               </div>
