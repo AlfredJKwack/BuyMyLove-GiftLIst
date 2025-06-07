@@ -27,6 +27,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: var(--spacing-4) var(--spacing-4) var(--spacing-2) var(--spacing-4);
 }
 
 .image-container {
@@ -137,14 +138,15 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .gift-card {
-    flex-direction: column;
+    /* flex-direction: column; */
   }
   
   .gift-card-image {
-    width: 100%;
+   /*  width: 100%; 
     padding: var(--spacing-4) var(--spacing-4) var(--spacing-2) var(--spacing-4);
+    */
   }
-  
+/*   
   .gift-card-content {
     border-left: none;
     border-top: 1px solid var(--color-gray-200);
@@ -154,4 +156,5 @@
     border-left: none;
     border-top: 4px solid var(--color-success);
   }
+  */ 
 }

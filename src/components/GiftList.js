@@ -138,7 +138,7 @@ export class GiftList {
     
     // Admin controls - added to the gift-footer
     const adminControls = this.isAdminUser ? `
-      <div class="admin-controls btn-group btn-space-x">
+      <div class="admin-controls btn-group btn-space-x self-end">
         <button class="btn btn-secondary edit-btn">Edit</button>
         <button class="btn btn-danger delete-btn">Delete</button>
       </div>
@@ -188,8 +188,8 @@ export class GiftList {
           </p>
           
           <!-- Footer with date -->
-          <div class="gift-footer">
-            <span class="gift-date">Added: ${dateAdded}</span>
+          <div class="gift-footer flex flex-col">
+            <span class="gift-date self-end">Added: ${dateAdded}</span>
             ${adminControls}
           </div>
         </div>

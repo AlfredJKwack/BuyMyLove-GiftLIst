@@ -16,6 +16,7 @@
 .fixed { position: fixed; }
 .sticky { position: sticky; }
 .static { position: static; }
+.self-end { align-self: flex-end; }
 
 .inset-0 {
   top: 0;
