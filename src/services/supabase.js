@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getCookieId } from '../utils/cookies';
 
 // Use environment variables or fallback to development values
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co';
@@ -8,8 +9,22 @@ if (supabaseUrl === 'https://example.supabase.co' || supabaseAnonKey.includes('e
   console.warn('Using development Supabase credentials. Set up your .env.local file for production.');
 }
 
-// Create a Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create a Supabase client with custom headers
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    headers: {
+      'x-gift-buyer-id': getCookieId(),
+    },
+  },
+});
+
+// Function to update the gift buyer header when cookie changes
+export const updateGiftBuyerHeader = () => {
+  const cookieId = getCookieId();
+  // Note: Supabase client headers are set at initialization time
+  // For dynamic headers, we need to recreate the client or use a different approach
+  console.log('Current gift buyer ID:', cookieId);
+};
 
 // No mocking - using real Supabase client
 

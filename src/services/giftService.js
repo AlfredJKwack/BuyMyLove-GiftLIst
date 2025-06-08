@@ -222,6 +222,8 @@ export const toggleBoughtStatus = async (id, bought) => {
     bought_by_cookie: bought ? cookieId : null,
   };
 
+  console.log('toggleBoughtStatus updates:', updates);
+
   const { data, error } = await supabase
     .from('gifts')
     .update(updates)

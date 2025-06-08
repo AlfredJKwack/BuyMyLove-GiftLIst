@@ -34,7 +34,7 @@ CREATE POLICY "Admin can update all gift fields" ON gifts
 CREATE POLICY "Anonymous users can update only bought status of unbought gifts" ON gifts 
   FOR UPDATE USING (
     auth.role() = 'anon' AND 
-    (bought = false OR bought_by_cookie = current_setting('request.cookie.gift_buyer_id', true))
+    (bought = false OR bought_by_cookie = current_setting('request.headers.x-gift-buyer-id', true))
   ) 
   WITH CHECK (
     auth.role() = 'anon'
