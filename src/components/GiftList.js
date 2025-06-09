@@ -79,13 +79,13 @@ export class GiftList {
     this.container.innerHTML = `
       <div class="text-center mb-8">
         <h2 class="text-2xl">Gift List</h2>
-        <p class="text-gray">Click on a gift to view details or mark it as bought.</p>
+        <p class="text-gray">If you're going to buy a gift, mark it as bought to avoid duplicate purchases!</p>
       </div>
       
       <div class="gift-grid">
         ${giftItems}
+              ${this.isAdminUser ? '<button id="add-gift-btn" class="btn btn-primary bottom-4 right-4 shadow-lg">Add Gift</button>' : ''}
       </div>
-      ${this.isAdminUser ? '<button id="add-gift-btn" class="btn btn-primary mt-8 fixed bottom-4 right-4 shadow-lg">Add Gift</button>' : ''}
     `;
     
     // Add event listeners
