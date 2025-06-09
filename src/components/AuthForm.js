@@ -27,6 +27,31 @@ export class AuthForm {
     }
     
     this.render();
+    
+    // Set up auth state change listener
+    this.setupAuthStateListener();
+  }
+
+  /**
+   * Set up auth state change listener
+   */
+  setupAuthStateListener() {
+    window.addEventListener('authStateChanged', (e) => {
+      const { session, isAuthenticated } = e.detail;
+      
+      console.log('AuthForm received auth state change:', isAuthenticated);
+      
+      this.isAuthenticated = isAuthenticated;
+      
+      if (isAuthenticated && session?.user) {
+        this.email = session.user.email;
+      } else {
+        this.email = '';
+      }
+      
+      // Re-render the component
+      this.render();
+    });
   }
 
   /**

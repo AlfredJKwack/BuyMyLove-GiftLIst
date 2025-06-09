@@ -3,6 +3,9 @@ import { fetchGifts, addGift, updateGift, deleteGift, toggleBoughtStatus } from 
 import { supabase } from '../src/services/supabase';
 import { getCookieId, setCookieId } from '../src/utils/cookies';
 
+// Mock fetch for Edge Functions
+global.fetch = vi.fn();
+
 // Mock the Supabase client
 vi.mock('../src/services/supabase', () => ({
   supabase: {
@@ -14,6 +17,9 @@ vi.mock('../src/services/supabase', () => ({
     eq: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     single: vi.fn().mockReturnThis(),
+    auth: {
+      getSession: vi.fn(),
+    },
     storage: {
       from: vi.fn().mockReturnThis(),
       upload: vi.fn().mockReturnThis(),
@@ -26,6 +32,14 @@ vi.mock('../src/services/supabase', () => ({
 vi.mock('../src/utils/cookies', () => ({
   getCookieId: vi.fn(),
   setCookieId: vi.fn(),
+}));
+
+// Mock environment variables
+vi.mock('import.meta', () => ({
+  env: {
+    VITE_SUPABASE_URL: 'https://test.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+  },
 }));
 
 describe('Gift Service', () => {
@@ -64,111 +78,130 @@ describe('Gift Service', () => {
   });
 
   describe('addGift', () => {
-    it('should add a gift successfully', async () => {
+    it('should add a gift successfully via Edge Function', async () => {
       const newGift = {
         title: 'New Gift',
         hyperlink: 'https://example.com/new',
         note: 'Test note',
       };
 
-      const mockResponse = {
-        data: [{ ...newGift, id: '123', bought: false, date_added: new Date().toISOString() }],
-        error: null,
+      const mockResponseData = {
+        success: true,
+        data: { ...newGift, id: '123', bought: false, date_added: new Date().toISOString() },
       };
 
-      supabase.from.mockReturnThis();
-      supabase.insert.mockReturnThis();
-      supabase.select.mockResolvedValue(mockResponse);
+      // Mock auth session for admin operations
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { access_token: 'test-token' } },
+      });
+
+      // Mock fetch for Edge Function call
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponseData),
+      });
 
       const result = await addGift(newGift);
 
-      expect(supabase.from).toHaveBeenCalledWith('gifts');
-      expect(supabase.insert).toHaveBeenCalledWith([
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://test.supabase.co/functions/v1/add-gift',
         expect.objectContaining({
-          title: newGift.title,
-          hyperlink: newGift.hyperlink,
-          note: newGift.note,
-          bought: false,
-        }),
-      ]);
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'authorization': 'Bearer test-token',
+          }),
+          body: JSON.stringify({
+            title: newGift.title,
+            hyperlink: newGift.hyperlink,
+            note: newGift.note,
+            imagePath: null,
+          }),
+        })
+      );
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse.data[0]);
+      expect(result.data).toEqual(mockResponseData.data);
     });
 
-    it('should handle errors when adding a gift', async () => {
+    it('should handle errors when adding a gift via Edge Function', async () => {
       const newGift = {
         title: 'New Gift',
         hyperlink: 'https://example.com/new',
       };
 
-      supabase.from.mockReturnThis();
-      supabase.insert.mockReturnThis();
-      supabase.select.mockResolvedValue({ data: null, error: new Error('Insert error') });
+      // Mock auth session
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { access_token: 'test-token' } },
+      });
+
+      // Mock fetch error
+      global.fetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: 'Server error' }),
+      });
 
       const result = await addGift(newGift);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Insert error');
+      expect(result.error).toBe('Server error');
     });
   });
 
   describe('toggleBoughtStatus', () => {
-    it('should toggle bought status successfully for unbought gift', async () => {
+    it('should toggle bought status successfully via Edge Function', async () => {
       const giftId = '123';
-      const mockGift = {
-        id: giftId,
-        title: 'Test Gift',
-        bought: false,
-        bought_by_cookie: null,
-      };
-
       const mockCookieId = 'test-cookie-123';
       getCookieId.mockReturnValue(mockCookieId);
 
-      // Mock the fetch of the current gift
-      supabase.from.mockReturnThis();
-      supabase.select.mockReturnThis();
-      supabase.eq.mockReturnThis();
-      supabase.single.mockResolvedValueOnce({ data: mockGift, error: null });
+      const mockResponseData = {
+        success: true,
+        data: {
+          id: giftId,
+          title: 'Test Gift',
+          bought: true,
+          bought_by_cookie: mockCookieId,
+        },
+      };
 
-      // Mock the update
-      supabase.from.mockReturnThis();
-      supabase.update.mockReturnThis();
-      supabase.eq.mockReturnThis();
-      supabase.select.mockResolvedValueOnce({
-        data: [{ ...mockGift, bought: true, bought_by_cookie: mockCookieId }],
-        error: null,
+      // Mock fetch for Edge Function call
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponseData),
       });
 
       const result = await toggleBoughtStatus(giftId, true);
 
-      expect(supabase.from).toHaveBeenCalledWith('gifts');
-      expect(supabase.update).toHaveBeenCalledWith({
-        bought: true,
-        bought_by_cookie: mockCookieId,
-      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://test.supabase.co/functions/v1/toggle-bought-status',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'x-gift-buyer-id': mockCookieId,
+          }),
+          body: JSON.stringify({
+            giftId,
+            bought: true,
+          }),
+        })
+      );
       expect(result.success).toBe(true);
       expect(result.data.bought).toBe(true);
       expect(result.data.bought_by_cookie).toBe(mockCookieId);
     });
 
-    it('should prevent unmarking a gift bought by someone else', async () => {
+    it('should handle errors when toggling bought status via Edge Function', async () => {
       const giftId = '123';
-      const mockGift = {
-        id: giftId,
-        title: 'Test Gift',
-        bought: true,
-        bought_by_cookie: 'other-cookie-456',
-      };
-
       const mockCookieId = 'test-cookie-123';
       getCookieId.mockReturnValue(mockCookieId);
 
-      // Mock the fetch of the current gift
-      supabase.from.mockReturnThis();
-      supabase.select.mockReturnThis();
-      supabase.eq.mockReturnThis();
-      supabase.single.mockResolvedValueOnce({ data: mockGift, error: null });
+      // Mock fetch error
+      global.fetch.mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({ error: 'You cannot unmark a gift that was marked by someone else' }),
+      });
 
       const result = await toggleBoughtStatus(giftId, false);
 

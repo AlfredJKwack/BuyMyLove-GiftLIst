@@ -26,6 +26,34 @@ export const updateGiftBuyerHeader = () => {
   console.log('Current gift buyer ID:', cookieId);
 };
 
+// Auth state change listener
+let authStateChangeListener = null;
+
+/**
+ * Set up auth state change listener
+ * @param {Function} callback - Function to call when auth state changes
+ * @returns {Function} Unsubscribe function
+ */
+export const setupAuthStateListener = (callback) => {
+  // Remove existing listener if any
+  if (authStateChangeListener) {
+    authStateChangeListener.subscription.unsubscribe();
+  }
+
+  // Set up new listener
+  authStateChangeListener = supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event, session?.user?.email);
+    callback(event, session);
+  });
+
+  return () => {
+    if (authStateChangeListener) {
+      authStateChangeListener.subscription.unsubscribe();
+      authStateChangeListener = null;
+    }
+  };
+};
+
 // No mocking - using real Supabase client
 
 /**

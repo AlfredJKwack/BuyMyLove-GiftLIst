@@ -1,6 +1,58 @@
 import { supabase } from './supabase';
 import { getCookieId, setCookieId } from '../utils/cookies';
 
+// Get the Supabase URL for Edge Functions
+const getSupabaseUrl = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co';
+  return url;
+};
+
+// Helper function to call Edge Functions
+const callEdgeFunction = async (functionName, payload, options = {}) => {
+  const supabaseUrl = getSupabaseUrl();
+  const url = `${supabaseUrl}/functions/v1/${functionName}`;
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+    ...options.headers,
+  };
+
+  // Add gift buyer ID header for anonymous operations
+  if (options.includeGiftBuyerId) {
+    headers['x-gift-buyer-id'] = getCookieId();
+    // For anonymous operations, use anon key as authorization
+    headers['authorization'] = `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`;
+  }
+
+  // Add authorization header for admin operations
+  if (options.includeAuth) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      headers['authorization'] = `Bearer ${session.access_token}`;
+    }
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error calling ${functionName}:`, error);
+    throw error;
+  }
+};
+
 /**
  * Fetch all gifts
  * @returns {Promise<Array>} Array of gift objects
@@ -25,26 +77,22 @@ export const fetchGifts = async () => {
  * @returns {Promise<{success: boolean, data: Object|null, error: string|null}>} Result of the operation
  */
 export const addGift = async (gift) => {
-  const { data, error } = await supabase
-    .from('gifts')
-    .insert([
-      {
-        title: gift.title,
-        hyperlink: gift.hyperlink,
-        note: gift.note || null,
-        image_path: gift.imagePath || null,
-        bought: false,
-        date_added: new Date().toISOString(),
-      },
-    ])
-    .select();
+  try {
+    // Call the Edge Function
+    const result = await callEdgeFunction('add-gift', {
+      title: gift.title,
+      hyperlink: gift.hyperlink,
+      note: gift.note || null,
+      imagePath: gift.imagePath || null,
+    }, {
+      includeAuth: true
+    });
 
-  if (error) {
+    return result;
+  } catch (error) {
     console.error('Error adding gift:', error.message);
     return { success: false, data: null, error: error.message };
   }
-
-  return { success: true, data: data[0], error: null };
 };
 
 /**
@@ -55,42 +103,17 @@ export const addGift = async (gift) => {
  */
 export const updateGift = async (id, updates) => {
   try {
-    // If there's a new image path, we need to check if there was an old one to delete
-    if (updates.image_path) {
-      // Get the current gift to check if it had an image
-      const { data: currentGift, error: fetchError } = await supabase
-        .from('gifts')
-        .select('image_path')
-        .eq('id', id)
-        .single();
-      
-      if (fetchError) {
-        console.error('Error fetching gift for update:', fetchError.message);
-        // Continue with the update even if we couldn't fetch the current gift
-      } else if (currentGift && currentGift.image_path && currentGift.image_path !== updates.image_path) {
-        // If the gift had a different image, delete the old one
-        const deleteImageResult = await deleteImageFromStorage(currentGift.image_path);
-        if (!deleteImageResult.success) {
-          console.warn('Failed to delete old gift image during update, but will continue with gift update:', deleteImageResult.error);
-        }
-      }
-    }
-    
-    // Update the gift
-    const { data, error } = await supabase
-      .from('gifts')
-      .update(updates)
-      .eq('id', id)
-      .select();
-    
-    if (error) {
-      console.error('Error updating gift:', error.message);
-      return { success: false, data: null, error: error.message };
-    }
-    
-    return { success: true, data: data[0], error: null };
+    // Call the Edge Function
+    const result = await callEdgeFunction('update-gift', {
+      giftId: id,
+      updates
+    }, {
+      includeAuth: true
+    });
+
+    return result;
   } catch (error) {
-    console.error('Error in gift update process:', error.message);
+    console.error('Error updating gift:', error.message);
     return { success: false, data: null, error: error.message };
   }
 };
@@ -143,40 +166,16 @@ export const deleteImageFromStorage = async (imagePath) => {
  */
 export const deleteGift = async (id) => {
   try {
-    // First, get the gift to retrieve its image path
-    const { data: gift, error: fetchError } = await supabase
-      .from('gifts')
-      .select('image_path')
-      .eq('id', id)
-      .single();
-    
-    if (fetchError) {
-      console.error('Error fetching gift for deletion:', fetchError.message);
-      return { success: false, error: fetchError.message };
-    }
-    
-    // If the gift has an image, delete it from storage
-    if (gift && gift.image_path) {
-      const deleteImageResult = await deleteImageFromStorage(gift.image_path);
-      if (!deleteImageResult.success) {
-        console.warn('Failed to delete gift image, but will continue with gift deletion:', deleteImageResult.error);
-      }
-    }
-    
-    // Now delete the gift record
-    const { error } = await supabase
-      .from('gifts')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting gift:', error.message);
-      return { success: false, error: error.message };
-    }
-    
-    return { success: true, error: null };
+    // Call the Edge Function
+    const result = await callEdgeFunction('delete-gift', {
+      giftId: id
+    }, {
+      includeAuth: true
+    });
+
+    return result;
   } catch (error) {
-    console.error('Error in gift deletion process:', error.message);
+    console.error('Error deleting gift:', error.message);
     return { success: false, error: error.message };
   }
 };
@@ -188,57 +187,27 @@ export const deleteGift = async (id) => {
  * @returns {Promise<{success: boolean, data: Object|null, error: string|null}>} Result of the operation
  */
 export const toggleBoughtStatus = async (id, bought) => {
-  // Get the current gift to check if it's already bought
-  const { data: currentGift, error: fetchError } = await supabase
-    .from('gifts')
-    .select('*')
-    .eq('id', id)
-    .single();
+  try {
+    // Get or create a cookie ID for the current user
+    let cookieId = getCookieId();
+    if (!cookieId) {
+      cookieId = crypto.randomUUID();
+      setCookieId(cookieId);
+    }
 
-  if (fetchError) {
-    console.error('Error fetching gift:', fetchError.message);
-    return { success: false, data: null, error: fetchError.message };
-  }
+    // Call the Edge Function
+    const result = await callEdgeFunction('toggle-bought-status', {
+      giftId: id,
+      bought
+    }, {
+      includeGiftBuyerId: true
+    });
 
-  // Get or create a cookie ID for the current user
-  let cookieId = getCookieId();
-  if (!cookieId) {
-    cookieId = crypto.randomUUID();
-    setCookieId(cookieId);
-  }
-
-  // Check if the user is allowed to toggle the bought status
-  if (currentGift.bought && currentGift.bought_by_cookie !== cookieId) {
-    return {
-      success: false,
-      data: null,
-      error: 'You cannot unmark a gift that was marked by someone else',
-    };
-  }
-
-  // Update the gift
-  const updates = {
-    bought,
-    bought_by_cookie: bought ? cookieId : null,
-  };
-
-  console.log('toggleBoughtStatus updates:', updates);
-
-  const { data, error } = await supabase
-    .from('gifts')
-    .update(updates)
-    .eq('id', id)
-    .select();
-
-  if (error) {
+    return result;
+  } catch (error) {
     console.error('Error toggling bought status:', error.message);
     return { success: false, data: null, error: error.message };
   }
-
-  // Log the interaction for abuse detection
-  await logVisitorInteraction(cookieId);
-
-  return { success: true, data: data[0], error: null };
 };
 
 /**

@@ -1,7 +1,7 @@
 import { GiftList } from './GiftList';
 import { GiftForm } from './GiftForm';
 import { AuthForm } from './AuthForm';
-import { isAdmin, getSession } from '../services/supabase';
+import { isAdmin, getSession, setupAuthStateListener } from '../services/supabase';
 import { deleteGift } from '../services/giftService';
 
 /**
@@ -88,7 +88,31 @@ export class App {
    * Set up auth state listener
    */
   setupAuthStateListener() {
-    // Listen for auth state changes from Supabase
+    // Set up Supabase auth state listener
+    setupAuthStateListener(async (event, session) => {
+      console.log('Auth state change detected in App:', event);
+      
+      // Update admin status
+      this.isAdminUser = await isAdmin();
+      this.giftList.isAdminUser = this.isAdminUser;
+      
+      // Refresh the gift list
+      this.giftList.loadGifts();
+      
+      // Update navigation
+      this.updateNavigation();
+      
+      // Notify AuthForm component about auth state change
+      window.dispatchEvent(new CustomEvent('authStateChanged', { 
+        detail: { 
+          event, 
+          session, 
+          isAuthenticated: !!session 
+        } 
+      }));
+    });
+
+    // Also listen for custom auth state changes (for backward compatibility)
     window.addEventListener('authStateChanged', async (e) => {
       this.isAdminUser = await isAdmin();
       this.giftList.isAdminUser = this.isAdminUser;

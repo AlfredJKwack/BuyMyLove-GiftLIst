@@ -86,8 +86,36 @@ npm run preview
 ### Supabase Setup
 
 1. Create a new Supabase project
-2. Run the SQL setup script in `supabase/schema.sql`
-3. Set up storage buckets as defined in the schema
+2. Install the Supabase CLI:
+   ```bash
+   npm install -g supabase
+   ```
+   Or look for alternative installation methods [here](https://github.com/supabase/cli#install-the-cli)
+
+3. Login to Supabase and link your project:
+   ```bash
+   supabase login
+   supabase link --project-ref YOUR_PROJECT_REF
+   ```
+4. Run the SQL setup script in `supabase/schema.sql`
+5. Deploy Edge Functions:
+   ```bash
+   ./install-edge-functions.sh
+   ```
+6. Set up storage buckets as defined in the schema
+
+#### Edge Functions
+
+This application uses Supabase Edge Functions for secure database operations that require Row Level Security (RLS) enforcement with anonymous user identity. The following functions are deployed:
+
+- `toggle-bought-status` - Allows anonymous users to mark/unmark gifts as bought
+- `add-gift` - Admin function to add new gifts
+- `update-gift` - Admin function to update existing gifts  
+- `delete-gift` - Admin function to delete gifts
+
+**Note:** All admin Edge Functions require a valid JWT in the `Authorization` header. The Edge Functions pass this JWT to Supabase so that RLS policies can correctly identify the authenticated user. This is essential for secure admin operations and is not possible with direct client requests to Supabase.
+
+The Edge Functions handle the `x-gift-buyer-id` header properly for RLS policies, which is not possible with direct client requests to Supabase.
 
 ### Netlify Deployment
 
@@ -110,9 +138,16 @@ npm run preview
 │   ├── main.js           # Application entry point
 │   └── style.css         # Global styles
 ├── supabase/             # Supabase configuration
+│   ├── functions/        # Edge Functions
+│   │   ├── toggle-bought-status/
+│   │   ├── add-gift/
+│   │   ├── update-gift/
+│   │   └── delete-gift/
+│   └── schema.sql        # Database schema
 ├── test/                 # Test files
 ├── .env.local.example    # Environment variables template
 ├── index.html            # HTML entry point
+├── install-edge-functions.sh  # Edge Functions installer
 ├── package.json          # Project dependencies
 └── vite.config.js        # Vite configuration
 ```
