@@ -34,6 +34,7 @@ const callEdgeFunction = async (functionName, payload, options = {}) => {
   }
 
   try {
+    console.info(`Calling Edge Function: ${functionName}`);
     const response = await fetch(url, {
       method: 'POST',
       headers,
@@ -43,10 +44,14 @@ const callEdgeFunction = async (functionName, payload, options = {}) => {
     const data = await response.json();
     
     if (!response.ok) {
+      console.error(`Edge Function ${functionName} failed:`, data);
       throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    } else {
+      console.log(`Edge Function ${functionName} response:`, data);
     }
 
     return data;
+
   } catch (error) {
     console.error(`Error calling ${functionName}:`, error);
     throw error;
@@ -58,6 +63,7 @@ const callEdgeFunction = async (functionName, payload, options = {}) => {
  * @returns {Promise<Array>} Array of gift objects
  */
 export const fetchGifts = async () => {
+  console.info('Fetching gifts from Supabase...');
   const { data, error } = await supabase
     .from('gifts')
     .select('*')
@@ -77,6 +83,7 @@ export const fetchGifts = async () => {
  * @returns {Promise<{success: boolean, data: Object|null, error: string|null}>} Result of the operation
  */
 export const addGift = async (gift) => {
+  console.info('Adding new gift');
   try {
     // Call the Edge Function
     const result = await callEdgeFunction('add-gift', {
@@ -102,6 +109,7 @@ export const addGift = async (gift) => {
  * @returns {Promise<{success: boolean, data: Object|null, error: string|null}>} Result of the operation
  */
 export const updateGift = async (id, updates) => {
+  console.info('Updating gift:', id);
   try {
     // Call the Edge Function
     const result = await callEdgeFunction('update-gift', {
@@ -124,6 +132,7 @@ export const updateGift = async (id, updates) => {
  * @returns {Promise<{success: boolean, error: string|null}>} Result of the operation
  */
 export const deleteImageFromStorage = async (imagePath) => {
+  console.info('Deleting image from storage:', imagePath);
   try {
     // If no image path, nothing to delete
     if (!imagePath) {
@@ -136,7 +145,7 @@ export const deleteImageFromStorage = async (imagePath) => {
     const filename = urlParts[urlParts.length - 1];
     
     if (!filename) {
-      console.warn('Could not extract filename from image path:', imagePath);
+      console.error('Could not extract filename from image path:', imagePath);
       return { success: false, error: 'Invalid image path' };
     }
     
@@ -165,6 +174,7 @@ export const deleteImageFromStorage = async (imagePath) => {
  * @returns {Promise<{success: boolean, error: string|null}>} Result of the operation
  */
 export const deleteGift = async (id) => {
+  console.info('Deleting gift with ID:', id);
   try {
     // Call the Edge Function
     const result = await callEdgeFunction('delete-gift', {
@@ -187,6 +197,7 @@ export const deleteGift = async (id) => {
  * @returns {Promise<{success: boolean, data: Object|null, error: string|null}>} Result of the operation
  */
 export const toggleBoughtStatus = async (id, bought) => {
+  console.info(`Toggling bought status for gift ID ${id}:`, bought);
   try {
     // Get or create a cookie ID for the current user
     let cookieId = getCookieId();
@@ -216,6 +227,7 @@ export const toggleBoughtStatus = async (id, bought) => {
  * @returns {Promise<void>}
  */
 export const logVisitorInteraction = async (cookieId) => {
+  console.info('Logging visitor interaction for cookie ID:', cookieId);
   try {
     // Get the visitor's IP address (in a real app, this would be done server-side)
     const ipAddress = 'client-ip-placeholder';
@@ -282,6 +294,7 @@ export const logVisitorInteraction = async (cookieId) => {
  * @returns {Promise<Blob|null>} - A promise that resolves to the processed image blob or null if processing failed
  */
 const processImageThumbnail = (file) => {
+  console.info('Processing image thumbnail for file:', file.name);
   return new Promise((resolve, reject) => {
     try {
       // Create a FileReader to read the image file
@@ -360,6 +373,7 @@ const processImageThumbnail = (file) => {
  * @returns {Promise<{success: boolean, path: string|null, error: string|null}>} Result of the operation
  */
 export const uploadGiftImage = async (file) => {
+  info('Uploading gift image:', file.name);
   try {
     // Process the image to create a 150x150 thumbnail
     const thumbnailBlob = await processImageThumbnail(file);

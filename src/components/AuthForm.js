@@ -39,7 +39,7 @@ export class AuthForm {
     window.addEventListener('authStateChanged', (e) => {
       const { session, isAuthenticated } = e.detail;
       
-      console.log('AuthForm received auth state change:', isAuthenticated);
+      console.warn('AuthForm received auth state change:', isAuthenticated);
       
       this.isAuthenticated = isAuthenticated;
       

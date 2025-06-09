@@ -23,7 +23,7 @@ export const updateGiftBuyerHeader = () => {
   const cookieId = getCookieId();
   // Note: Supabase client headers are set at initialization time
   // For dynamic headers, we need to recreate the client or use a different approach
-  console.log('Current gift buyer ID:', cookieId);
+  console.info('Current gift buyer ID:', cookieId);
 };
 
 // Auth state change listener
@@ -42,7 +42,7 @@ export const setupAuthStateListener = (callback) => {
 
   // Set up new listener
   authStateChangeListener = supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', event, session?.user?.email);
+    console.info('Auth state changed:', event, session?.user?.email);
     callback(event, session);
   });
 

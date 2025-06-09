@@ -173,6 +173,7 @@ export class GiftForm {
    * @param {Event} e - The submit event
    */
   async handleSubmit(e) {
+    console.info('Form submitted');
     e.preventDefault();
     
     const form = e.target;
@@ -194,6 +195,7 @@ export class GiftForm {
         const uploadResult = await uploadGiftImage(this.imageFile);
         if (uploadResult.success) {
           formData.imagePath = uploadResult.path;
+          console.info('Image uploaded successfully:', formData.imagePath);
         } else {
           this.showMessage(uploadResult.error || 'Failed to upload image', 'error');
           throw new Error(uploadResult.error || 'Failed to upload image');
@@ -232,8 +234,7 @@ export class GiftForm {
         throw new Error(result.error || 'Failed to save gift');
       }
     } catch (error) {
-      const { error: debugError, log } = await import('../utils/debug.js');
-      debugError('Error saving gift:', error);
+      console.error('Error saving gift:', error);
       this.showMessage(`Failed to save gift: ${error.message}`, 'error');
     } finally {
       // Re-enable the submit button

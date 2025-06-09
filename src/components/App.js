@@ -131,7 +131,7 @@ export class App {
       this.closeAdminModal();
     }
     
-    console.log('Route changed to:', this.currentRoute);
+    console.info('Route changed to:', this.currentRoute);
   }
 
   /**
@@ -161,7 +161,7 @@ export class App {
   setupAuthStateListener() {
     // Set up Supabase auth state listener
     supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change detected in App:', event);
+      console.warn('Auth state change detected in App:', event);
       this.isAdminUser = await isAdmin();
       this.giftList.isAdminUser = this.isAdminUser;
       this.giftList.loadGifts();
