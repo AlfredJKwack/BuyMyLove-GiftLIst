@@ -70,18 +70,18 @@ export class AuthForm {
    */
   renderLoginForm() {
     this.container.innerHTML = `
-      <div class="bg-white shadow-md rounded-lg p-6 max-w-md mx-auto">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Admin Login</h2>
+      <div class="login-form">
+        <h2>Admin Login</h2>
         
-        <form id="login-form" class="space-y-4">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
             <input type="email" id="email" name="email" required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="form-input"
               placeholder="Enter admin email">
           </div>
           
-          <div>
+          <div class="form-group">
             <button type="submit" id="login-btn"
               class="btn btn-primary w-full ${this.isLoading ? 'disabled' : ''}">
               ${this.isLoading ? 'Sending Login Link...' : 'Send Login Link'}
@@ -89,7 +89,7 @@ export class AuthForm {
           </div>
         </form>
         
-        <div id="login-message" class="mt-4 hidden"></div>
+        <div id="login-message" class="form-message hidden"></div>
       </div>
     `;
     
@@ -102,22 +102,32 @@ export class AuthForm {
    */
   renderLoggedInState() {
     this.container.innerHTML = `
-      <div class="bg-white shadow-md rounded-lg p-6 max-w-md mx-auto">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold text-gray-800">Admin Panel</h2>
-          <span class="text-sm text-gray-500">Logged in as ${this.email}</span>
+      <div class="admin-panel">
+        <h2>Admin Panel</h2>
+        
+        <div class="admin-info">
+          <p>You are logged in as an admin and can manage gifts.</p>
+          <span class="admin-email">Logged in as: ${this.email}</span>
         </div>
         
-        <p class="text-gray-600 mb-4">You are logged in as an admin and can manage gifts.</p>
-        
-        <button id="logout-btn" class="btn btn-secondary w-full">
-          Logout
-        </button>
+        <div class="admin-actions">
+          <a href="#/" class="admin-link" id="gift-list-link">
+            View Gift List
+          </a>
+          
+          <button id="logout-btn" class="btn btn-secondary w-full">
+            Logout
+          </button>
+        </div>
       </div>
     `;
     
     // Add event listeners
     document.getElementById('logout-btn').addEventListener('click', () => this.handleLogout());
+    document.getElementById('gift-list-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.hash = '/';
+    });
   }
 
   /**
@@ -201,14 +211,12 @@ export class AuthForm {
     
     if (messageEl) {
       messageEl.textContent = message;
-      messageEl.className = 'mt-4 p-3 rounded text-sm';
+      messageEl.className = 'form-message';
       
       if (type === 'success') {
-        messageEl.classList.add('bg-green-100', 'text-green-800');
+        messageEl.classList.add('success');
       } else if (type === 'error') {
-        messageEl.classList.add('bg-red-100', 'text-red-800');
-      } else {
-        messageEl.classList.add('bg-blue-100', 'text-blue-800');
+        messageEl.classList.add('error');
       }
       
       messageEl.classList.remove('hidden');

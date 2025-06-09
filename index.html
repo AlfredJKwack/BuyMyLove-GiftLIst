@@ -9,52 +9,24 @@
   </head>
   <body>
     <div id="app">
-      <!-- Header -->
-      <header>
-        <div class="container">
-          <div class="header-content">
-            <div class="logo">
-              <h1>Gift List</h1>
-            </div>
-            <nav>
-              <a href="#" id="nav-list" class="active">Gift List</a>
-              <a href="#" id="nav-login">Admin Login</a>
-            </nav>
-          </div>
-        </div>
-      </header>
-
       <!-- Main content -->
       <main>
         <div class="main-content container">
           <div id="gift-list-container" class="gift-list-container">
             <!-- Gift list will be dynamically rendered here -->
           </div>
-          
-          <div id="login-container" class="login-container hidden">
-            <div class="login-form">
-              <h2>Admin Login</h2>
-              
-              <form id="login-form">
-                <div class="form-group">
-                  <label for="email" class="form-label">Email</label>
-                  <input type="email" id="email" name="email" required
-                    class="form-input"
-                    placeholder="Enter admin email">
-                </div>
-                
-                <div class="form-group">
-                  <button type="submit" id="login-btn" class="btn btn-primary w-full">
-                    Send Login Link
-                  </button>
-                </div>
-              </form>
-              
-              <div id="login-message" class="form-message hidden"></div>
-            </div>
-          </div>
         </div>
       </main>
+
+      <!-- Admin Modal -->
+      <div id="admin-modal" class="admin-modal hidden">
+        <div class="admin-modal-overlay"></div>
+        <div class="admin-modal-content">
+          <div id="admin-modal-body">
+            <!-- AuthForm will be rendered here -->
+          </div>
+        </div>
+      </div>
 
       <!-- Footer -->
       <footer>

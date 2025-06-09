@@ -7,10 +7,10 @@ Version 0.2.0
 ## Features
 
 - Mobile-first responsive design
-- View gift list with details (title, link, notes, date added)
+- View gift list with details
 - Mark gifts as bought/available with visual toggle
-- Cookie-based identity for tracking who bought what
-- Admin authentication for managing gifts
+- Tracking of bought gifts to prevent duplicate purchases
+- Admin authentication for managing gifts via dedicated `#/admin` url
 - Visitor tracking for abuse prevention
 
 ## Tech Stack
@@ -102,12 +102,15 @@ npm run preview
    supabase login
    supabase link --project-ref YOUR_PROJECT_REF
    ```
-4. Run the SQL setup script in `supabase/schema.sql`
+4. Run the SQL setup script located at `supabase/schema.sql` in the Supabase environment. 
+   
 5. Deploy Edge Functions:
    ```bash
    ./install-edge-functions.sh
    ```
 6. Set up storage buckets as defined in the schema
+   
+7. Add at least one user in the Supabase dashboard authentication section to enable admin access. The email is what matters.
 
 #### Edge Functions
 
@@ -118,10 +121,6 @@ This application uses Supabase Edge Functions for secure database operations tha
 - `update-gift` - Admin function to update existing gifts  
 - `delete-gift` - Admin function to delete gifts
 
-**Note:** All admin Edge Functions require a valid JWT in the `Authorization` header. The Edge Functions pass this JWT to Supabase so that RLS policies can correctly identify the authenticated user. This is essential for secure admin operations and is not possible with direct client requests to Supabase.
-
-The Edge Functions handle the `x-gift-buyer-id` header properly for RLS policies, which is not possible with direct client requests to Supabase.
-
 ### Netlify Deployment
 
 1. Connect your GitHub repository to Netlify
@@ -129,6 +128,18 @@ The Edge Functions handle the `x-gift-buyer-id` header properly for RLS policies
    - Build command: `npm run build`
    - Publish directory: `dist`
 3. Add environment variables from your `.env.local` file
+
+### Admin Panel
+
+The admin panel is accessible via the `#/admin` route and serves to log in and out. Authenticated admins will see additional controls to add, update, and delete gifts directly in the listing.
+
+**Authentication:**
+- All authenticated users are considered admins
+- Login is done via magic link sent to email address
+- Session persists across browser sessions
+- Secure logout functionality
+
+You must have set up a user in the Supabase dashboard authentication section to enable admin access. 
 
 ## Project Structure
 
@@ -138,6 +149,12 @@ The Edge Functions handle the `x-gift-buyer-id` header properly for RLS policies
 ├── public/               # Static assets
 ├── src/
 │   ├── components/       # UI components
+│   ├── css/              # Modular CSS files
+│   │   ├── base/         # Base styles (reset, variables, typography)
+│   │   ├── components/   # Component styles (cards, forms, modal, etc.)
+│   │   ├── layout/       # Layout styles (containers, grid)
+│   │   ├── utils/        # Utility styles
+│   │   └── main.css      # Main CSS entry point
 │   ├── services/         # API services
 │   ├── utils/            # Utility functions
 │   ├── main.js           # Application entry point

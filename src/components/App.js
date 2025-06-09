@@ -6,17 +6,18 @@ import { deleteGift } from '../services/giftService';
 
 /**
  * Main App Component
- * Orchestrates the entire application
+ * Orchestrates the entire application with hash-based routing
  */
 export class App {
   constructor(container) {
     this.container = container;
     this.isAdminUser = false;
-    this.currentView = 'list'; // 'list' or 'login'
+    this.currentRoute = '/';
     
     // Get existing containers
     this.giftListContainer = document.getElementById('gift-list-container');
-    this.loginContainer = document.getElementById('login-container');
+    this.adminModal = document.getElementById('admin-modal');
+    this.adminModalBody = document.getElementById('admin-modal-body');
     
     // Create gift form container
     this.giftFormContainer = document.createElement('div');
@@ -26,7 +27,7 @@ export class App {
     // Initialize components
     this.giftList = new GiftList(this.giftListContainer);
     this.giftForm = new GiftForm(this.giftFormContainer);
-    this.authForm = new AuthForm(this.loginContainer);
+    this.authForm = new AuthForm(this.adminModalBody);
     
     this.init();
   }
@@ -44,11 +45,14 @@ export class App {
     // Set up event listeners
     this.setupEventListeners();
     
-    // Render the initial view
-    this.renderView();
+    // Set up routing
+    this.setupRouting();
     
     // Set up auth state listener
     this.setupAuthStateListener();
+    
+    // Handle initial route
+    this.handleRouteChange();
   }
 
   /**
@@ -71,17 +75,76 @@ export class App {
     window.addEventListener('giftUpdated', () => {
       this.giftList.loadGifts();
     });
-    
-    // Navigation events
-    document.getElementById('nav-list').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.setView('list');
+
+    // Modal events
+    this.setupModalEvents();
+  }
+
+  /**
+   * Set up modal event listeners
+   */
+  setupModalEvents() {
+    // Close modal when clicking overlay
+    this.adminModal.addEventListener('click', (e) => {
+      if (e.target === this.adminModal || e.target.classList.contains('admin-modal-overlay')) {
+        this.closeAdminModal();
+      }
     });
-    
-    document.getElementById('nav-login').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.setView('login');
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !this.adminModal.classList.contains('hidden')) {
+        this.closeAdminModal();
+      }
     });
+  }
+
+  /**
+   * Set up hash-based routing
+   */
+  setupRouting() {
+    // Listen for hash changes
+    window.addEventListener('hashchange', () => {
+      this.handleRouteChange();
+    });
+  }
+
+  /**
+   * Handle route changes
+   */
+  handleRouteChange() {
+    const hash = window.location.hash;
+    
+    if (hash === '#/admin') {
+      this.currentRoute = '/admin';
+      this.showAdminModal();
+    } else {
+      this.currentRoute = '/';
+      this.closeAdminModal();
+    }
+    
+    console.log('Route changed to:', this.currentRoute);
+  }
+
+  /**
+   * Show the admin modal
+   */
+  showAdminModal() {
+    this.adminModal.classList.remove('hidden');
+    // Focus trap - focus the modal content
+    this.adminModalBody.focus();
+  }
+
+  /**
+   * Close the admin modal and navigate to home
+   */
+  closeAdminModal() {
+    this.adminModal.classList.add('hidden');
+    
+    // Update URL if we're currently on admin route
+    if (this.currentRoute === '/admin') {
+      window.location.hash = '/';
+    }
   }
 
   /**
@@ -94,7 +157,6 @@ export class App {
       this.isAdminUser = await isAdmin();
       this.giftList.isAdminUser = this.isAdminUser;
       this.giftList.loadGifts();
-      this.updateNavigation();
       window.dispatchEvent(new CustomEvent('authStateChanged', { 
         detail: { 
           event, 
@@ -109,65 +171,7 @@ export class App {
       this.isAdminUser = await isAdmin();
       this.giftList.isAdminUser = this.isAdminUser;
       this.giftList.loadGifts();
-      this.updateNavigation();
     });
-  }
-
-  /**
-   * Render the current view
-   */
-  renderView() {
-    console.log('Rendering view:', this.currentView);
-    
-    // Hide all containers
-    if (this.giftListContainer) {
-      this.giftListContainer.style.display = 'none';
-    }
-    
-    if (this.loginContainer) {
-      this.loginContainer.style.display = 'none';
-    }
-    
-    // Show the current view
-    if (this.currentView === 'list' && this.giftListContainer) {
-      console.log('Showing gift list');
-      this.giftListContainer.style.display = 'block';
-    } else if (this.currentView === 'login' && this.loginContainer) {
-      console.log('Showing login form');
-      this.loginContainer.style.display = 'block';
-    }
-    
-    // Update navigation
-    this.updateNavigation();
-  }
-
-  /**
-   * Update the navigation based on auth state
-   */
-  updateNavigation() {
-    const navList = document.getElementById('nav-list');
-    const navLogin = document.getElementById('nav-login');
-    
-    if (navList && navLogin) {
-      // Update active state
-      navList.classList.toggle('text-blue-600', this.currentView === 'list');
-      navLogin.classList.toggle('text-blue-600', this.currentView === 'login');
-      
-      // Update login/admin text
-      navLogin.textContent = this.isAdminUser ? 'Admin Panel' : 'Admin Login';
-    }
-  }
-
-  /**
-   * Set the current view
-   * @param {string} view - The view to show ('list' or 'login')
-   */
-  setView(view) {
-    console.log('Setting view to:', view);
-    if (this.currentView !== view) {
-      this.currentView = view;
-      this.renderView();
-    }
   }
 
   /**

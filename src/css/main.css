@@ -10,11 +10,11 @@
 @import './layout/_grid.css';
 
 /* Components */
-@import './components/_header.css';
 @import './components/_footer.css';
 @import './components/_forms.css';
 @import './components/_toggle.css';
 @import './components/_card.css';
+@import './components/_modal.css';
 
 /* Utilities */
 @import './utils/_helpers.css';
