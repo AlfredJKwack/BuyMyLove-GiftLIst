@@ -32,7 +32,7 @@ Version 0.2.0
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/BuyMyLove-GiftLIst.git
+   git clone https://github.com/AlfredJKwack/BuyMyLove-GiftLIst.git
    cd BuyMyLove-GiftLIst
    ```
 

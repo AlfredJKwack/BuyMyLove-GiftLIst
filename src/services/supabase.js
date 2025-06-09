@@ -10,7 +10,7 @@ if (supabaseUrl === 'https://example.supabase.co' || supabaseAnonKey.includes('e
 }
 
 // Create a Supabase client with custom headers
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+let supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     headers: {
       'x-gift-buyer-id': getCookieId(),
@@ -18,7 +18,30 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Function to update the gift buyer header when cookie changes
+// Export the current client instance
+export const supabase = supabaseClient;
+
+// Function to reset the Supabase client with updated headers
+export const resetSupabaseClient = () => {
+  const cookieId = getCookieId();
+  console.info('Resetting Supabase client with new gift buyer ID:', cookieId);
+  
+  // Create a new client with the updated cookie ID
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        'x-gift-buyer-id': cookieId,
+      },
+    },
+  });
+  
+  // Update the exported reference
+  Object.assign(supabase, supabaseClient);
+  
+  return supabaseClient;
+};
+
+// Function to update the gift buyer header when cookie changes (deprecated - use resetSupabaseClient)
 export const updateGiftBuyerHeader = () => {
   const cookieId = getCookieId();
   // Note: Supabase client headers are set at initialization time

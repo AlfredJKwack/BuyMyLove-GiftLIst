@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, resetSupabaseClient } from './supabase';
 import { getCookieId, setCookieId } from '../utils/cookies';
 
 // Get the Supabase URL for Edge Functions
@@ -18,28 +18,46 @@ const callEdgeFunction = async (functionName, payload, options = {}) => {
     ...options.headers,
   };
 
-  // Add gift buyer ID header for anonymous operations
-  if (options.includeGiftBuyerId) {
-    headers['x-gift-buyer-id'] = getCookieId();
-    // For anonymous operations, use anon key as authorization
-    headers['authorization'] = `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`;
-  }
-
-  // Add authorization header for admin operations
-  if (options.includeAuth) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      headers['authorization'] = `Bearer ${session.access_token}`;
-    }
-  }
-
   try {
+    // Add gift buyer ID header for anonymous operations
+    if (options.includeGiftBuyerId) {
+      const cookieId = getCookieId();
+      console.info(`Adding gift buyer ID header: ${cookieId}`);
+      headers['x-gift-buyer-id'] = cookieId;
+      // For anonymous operations, use anon key as authorization
+      headers['authorization'] = `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`;
+    }
+
+    // Add authorization header for admin operations
+    if (options.includeAuth) {
+      console.info('Getting session for admin authorization...');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          console.info('Session found, adding authorization header');
+          headers['authorization'] = `Bearer ${session.access_token}`;
+        } else {
+          console.warn('No session found for admin operation');
+        }
+      } catch (sessionError) {
+        console.error('Error getting session for authorization:', sessionError);
+        throw new Error('Failed to get authentication session');
+      }
+    }
+
+    // Log request details before making the call
     console.info(`Calling Edge Function: ${functionName}`);
+    console.info(`Request URL: ${url}`);
+    console.info(`Request headers:`, { ...headers, authorization: headers.authorization ? '[REDACTED]' : undefined });
+    console.info(`Request payload:`, payload);
+
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
     });
+
+    console.info(`Edge Function ${functionName} response status: ${response.status}`);
 
     const data = await response.json();
     
@@ -54,6 +72,7 @@ const callEdgeFunction = async (functionName, payload, options = {}) => {
 
   } catch (error) {
     console.error(`Error calling ${functionName}:`, error);
+    console.error(`Error details - URL: ${url}, Payload:`, payload);
     throw error;
   }
 };
@@ -201,9 +220,19 @@ export const toggleBoughtStatus = async (id, bought) => {
   try {
     // Get or create a cookie ID for the current user
     let cookieId = getCookieId();
+    const hadCookie = !!cookieId;
+    
     if (!cookieId) {
+      console.info('No existing cookie found, creating new one');
       cookieId = crypto.randomUUID();
       setCookieId(cookieId);
+      console.info('New cookie set:', cookieId);
+      
+      // Reset the Supabase client to use the new cookie ID
+      console.info('Resetting Supabase client with new cookie ID');
+      resetSupabaseClient();
+    } else {
+      console.info('Using existing cookie:', cookieId);
     }
 
     // Call the Edge Function
@@ -297,16 +326,41 @@ const picaInstance = pica();
  * @returns {Promise<Blob|null>} - A promise that resolves to the processed image blob or null if processing failed
  */
 const processImageThumbnail = (file) => {
-  console.info('Processing image thumbnail for file:', file.name);
+  console.info('Processing image thumbnail for file:', file.name, 'Size:', file.size, 'Type:', file.type);
   return new Promise((resolve, reject) => {
     try {
+      // Validate file input
+      if (!file || !(file instanceof File)) {
+        const error = new Error('Invalid file input - not a File object');
+        console.error('Image processing error:', error.message, 'Received:', file);
+        reject(error);
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        const error = new Error(`Invalid file type: ${file.type}. Expected image file.`);
+        console.error('Image processing error:', error.message);
+        reject(error);
+        return;
+      }
+
       const reader = new FileReader();
 
       reader.onload = (e) => {
+        console.info('FileReader loaded successfully, creating image element');
         const img = new Image();
 
         img.onload = async () => {
+          console.info(`Image loaded successfully - dimensions: ${img.width}x${img.height}`);
           try {
+            // Validate image dimensions
+            if (img.width === 0 || img.height === 0) {
+              const error = new Error(`Invalid image dimensions: ${img.width}x${img.height}`);
+              console.error('Image processing error:', error.message);
+              reject(error);
+              return;
+            }
+
             // Calculate the largest possible square (center-crop)
             let sourceWidth = img.width;
             let sourceHeight = img.height;
@@ -321,11 +375,22 @@ const processImageThumbnail = (file) => {
               sourceHeight = sourceWidth;
             }
 
+            console.info(`Crop calculations - source: ${sourceWidth}x${sourceHeight} at (${sourceX}, ${sourceY})`);
+
             // Create a source canvas for the cropped square
             const sourceCanvas = document.createElement('canvas');
             sourceCanvas.width = sourceWidth;
             sourceCanvas.height = sourceHeight;
             const sourceCtx = sourceCanvas.getContext('2d');
+            
+            if (!sourceCtx) {
+              const error = new Error('Failed to get 2D context from source canvas');
+              console.error('Image processing error:', error.message);
+              reject(error);
+              return;
+            }
+
+            console.info('Drawing image to source canvas');
             sourceCtx.drawImage(
               img,
               sourceX, sourceY, sourceWidth, sourceHeight,
@@ -337,35 +402,48 @@ const processImageThumbnail = (file) => {
             destCanvas.width = 150;
             destCanvas.height = 150;
 
+            console.info('Starting Pica resize operation');
             // Use Pica to resize the cropped square to 150x150
             await picaInstance.resize(sourceCanvas, destCanvas);
 
+            console.info('Pica resize completed, converting to blob');
             // Use Pica to convert the resized canvas to a JPEG blob
             const blob = await picaInstance.toBlob(destCanvas, 'image/jpeg', 0.9);
 
             if (blob) {
+              console.info('Image processing completed successfully, blob size:', blob.size);
               resolve(blob);
             } else {
-              reject(new Error('Failed to convert canvas to blob'));
+              const error = new Error('Failed to convert canvas to blob - Pica returned null');
+              console.error('Image processing error:', error.message);
+              reject(error);
             }
           } catch (err) {
+            console.error('Error during image processing operations:', err.message, err);
             reject(err);
           }
         };
 
-        img.onerror = () => {
-          reject(new Error('Failed to load image'));
+        img.onerror = (event) => {
+          const error = new Error('Failed to load image - image.onerror triggered');
+          console.error('Image processing error:', error.message, 'Event:', event);
+          reject(error);
         };
 
+        console.info('Setting image src from FileReader result');
         img.src = e.target.result;
       };
 
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
+      reader.onerror = (event) => {
+        const error = new Error('Failed to read file - FileReader.onerror triggered');
+        console.error('Image processing error:', error.message, 'Event:', event, 'File:', file.name);
+        reject(error);
       };
 
+      console.info('Starting FileReader.readAsDataURL');
       reader.readAsDataURL(file);
     } catch (error) {
+      console.error('Error in processImageThumbnail setup:', error.message, error);
       reject(error);
     }
   });
