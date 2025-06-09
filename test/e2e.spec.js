@@ -106,11 +106,70 @@ test.describe('Gift List App', () => {
     await expect(page.locator('.admin-info p')).toContainText('A server error occurred. Please try again later.');
   });
 
-  // This test would require authentication, which is challenging in E2E tests
-  // In a real test suite, we would use test accounts or mock the authentication
-  test.skip('should allow admin to add a gift', async ({ page }) => {
-    // Log in as admin (this would need to be implemented)
-    // await loginAsAdmin(page);
+  test('should allow admin to add a gift with mocked authentication', async ({ page }) => {
+    // Mock authentication by setting localStorage
+    await page.addInitScript(() => {
+      // Mock Supabase session
+      window.localStorage.setItem('sb-test-auth-token', JSON.stringify({
+        access_token: 'mock-admin-token',
+        refresh_token: 'mock-refresh-token',
+        expires_at: Date.now() + 3600000, // 1 hour from now
+        user: {
+          id: 'mock-admin-id',
+          email: 'admin@example.com'
+        }
+      }));
+    });
+
+    // Mock the fetch calls to edge functions
+    await page.route('**/functions/v1/add-gift', async route => {
+      const request = route.request();
+      const postData = request.postDataJSON();
+      
+      // Simulate successful gift addition
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'mock-gift-id',
+            title: postData.title,
+            hyperlink: postData.hyperlink,
+            note: postData.note,
+            bought: false,
+            date_added: new Date().toISOString()
+          }
+        })
+      });
+    });
+
+    // Mock the gifts fetch to return our new gift
+    await page.route('**/rest/v1/gifts*', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'mock-gift-id',
+            title: 'Test Gift',
+            hyperlink: 'https://example.com/test',
+            note: 'This is a test gift',
+            bought: false,
+            date_added: new Date().toISOString()
+          }
+        ])
+      });
+    });
+
+    // Navigate to the app
+    await page.goto('http://localhost:5173/');
+    
+    // Navigate to admin page
+    await page.click('#nav-login');
+    
+    // Check that we're in admin mode (should show add gift button)
+    await expect(page.locator('#add-gift-btn')).toBeVisible();
     
     // Click the add gift button
     await page.click('#add-gift-btn');
@@ -123,12 +182,167 @@ test.describe('Gift List App', () => {
     // Submit the form
     await page.click('#submit-btn');
     
-    // Check that the gift was added
+    // Check that the gift was added (should appear in the list)
     await expect(page.locator('text=Test Gift')).toBeVisible();
+  });
+
+  test('should allow admin to edit a gift with mocked authentication', async ({ page }) => {
+    // Mock authentication
+    await page.addInitScript(() => {
+      window.localStorage.setItem('sb-test-auth-token', JSON.stringify({
+        access_token: 'mock-admin-token',
+        user: { id: 'mock-admin-id', email: 'admin@example.com' }
+      }));
+    });
+
+    // Mock initial gifts fetch
+    await page.route('**/rest/v1/gifts*', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'existing-gift-id',
+            title: 'Existing Gift',
+            hyperlink: 'https://example.com/existing',
+            note: 'Original note',
+            bought: false,
+            date_added: new Date().toISOString()
+          }
+        ])
+      });
+    });
+
+    // Mock the update gift edge function
+    await page.route('**/functions/v1/update-gift', async route => {
+      const request = route.request();
+      const postData = request.postDataJSON();
+      
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: postData.giftId,
+            ...postData.updates,
+            bought: false,
+            date_added: new Date().toISOString()
+          }
+        })
+      });
+    });
+
+    await page.goto('http://localhost:5173/');
+    await page.click('#nav-login');
+    
+    // Wait for the existing gift to load
+    await expect(page.locator('text=Existing Gift')).toBeVisible();
+    
+    // Click edit button for the gift
+    await page.click('[data-testid="edit-gift-existing-gift-id"]');
+    
+    // Update the form
+    await page.fill('#gift-title', 'Updated Gift');
+    await page.fill('#gift-note', 'Updated note');
+    
+    // Submit the form
+    await page.click('#submit-btn');
+    
+    // Check that the gift was updated
+    await expect(page.locator('text=Updated Gift')).toBeVisible();
+  });
+
+  test('should allow admin to delete a gift with mocked authentication', async ({ page }) => {
+    // Mock authentication
+    await page.addInitScript(() => {
+      window.localStorage.setItem('sb-test-auth-token', JSON.stringify({
+        access_token: 'mock-admin-token',
+        user: { id: 'mock-admin-id', email: 'admin@example.com' }
+      }));
+    });
+
+    // Mock initial gifts fetch
+    await page.route('**/rest/v1/gifts*', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'gift-to-delete',
+            title: 'Gift to Delete',
+            hyperlink: 'https://example.com/delete',
+            note: 'Will be deleted',
+            bought: false,
+            date_added: new Date().toISOString()
+          }
+        ])
+      });
+    });
+
+    // Mock the delete gift edge function
+    await page.route('**/functions/v1/delete-gift', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true })
+      });
+    });
+
+    await page.goto('http://localhost:5173/');
+    await page.click('#nav-login');
+    
+    // Wait for the gift to load
+    await expect(page.locator('text=Gift to Delete')).toBeVisible();
+    
+    // Click delete button for the gift
+    await page.click('[data-testid="delete-gift-gift-to-delete"]');
+    
+    // Confirm deletion in modal/dialog
+    await page.click('#confirm-delete-btn');
+    
+    // Check that the gift was removed
+    await expect(page.locator('text=Gift to Delete')).not.toBeVisible();
+  });
+
+  test('should handle edge function errors gracefully', async ({ page }) => {
+    // Mock authentication
+    await page.addInitScript(() => {
+      window.localStorage.setItem('sb-test-auth-token', JSON.stringify({
+        access_token: 'mock-admin-token',
+        user: { id: 'mock-admin-id', email: 'admin@example.com' }
+      }));
+    });
+
+    // Mock the add gift edge function to return an error
+    await page.route('**/functions/v1/add-gift', async route => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: 'Server error occurred'
+        })
+      });
+    });
+
+    await page.goto('http://localhost:5173/');
+    await page.click('#nav-login');
+    await page.click('#add-gift-btn');
+    
+    // Fill out the form
+    await page.fill('#gift-title', 'Test Gift');
+    await page.fill('#gift-hyperlink', 'https://example.com/test');
+    
+    // Submit the form
+    await page.click('#submit-btn');
+    
+    // Check that error message is displayed
+    await expect(page.locator('text=Server error occurred')).toBeVisible();
   });
 });
 
-// Helper function to simulate admin login
+// Helper function to simulate admin login (kept for reference)
 async function loginAsAdmin(page) {
   // Navigate to login page
   await page.click('#nav-login');

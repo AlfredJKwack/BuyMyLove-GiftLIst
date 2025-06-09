@@ -148,6 +148,133 @@ describe('Gift Service', () => {
     });
   });
 
+  describe('updateGift', () => {
+    it('should update a gift successfully via Edge Function', async () => {
+      const giftId = '123';
+      const updates = {
+        title: 'Updated Gift',
+        hyperlink: 'https://example.com/updated',
+        note: 'Updated note',
+      };
+
+      const mockResponseData = {
+        success: true,
+        data: { ...updates, id: giftId, bought: false, date_added: new Date().toISOString() },
+      };
+
+      // Mock auth session for admin operations
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { access_token: 'test-token' } },
+      });
+
+      // Mock fetch for Edge Function call
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponseData),
+      });
+
+      const result = await updateGift(giftId, updates);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://test.supabase.co/functions/v1/update-gift',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'authorization': 'Bearer test-token',
+          }),
+          body: JSON.stringify({
+            giftId,
+            updates,
+          }),
+        })
+      );
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockResponseData.data);
+    });
+
+    it('should handle errors when updating a gift via Edge Function', async () => {
+      const giftId = '123';
+      const updates = { title: 'Updated Gift' };
+
+      // Mock auth session
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { access_token: 'test-token' } },
+      });
+
+      // Mock fetch error
+      global.fetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ error: 'Gift not found' }),
+      });
+
+      const result = await updateGift(giftId, updates);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Gift not found');
+    });
+  });
+
+  describe('deleteGift', () => {
+    it('should delete a gift successfully via Edge Function', async () => {
+      const giftId = '123';
+
+      const mockResponseData = {
+        success: true,
+      };
+
+      // Mock auth session for admin operations
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { access_token: 'test-token' } },
+      });
+
+      // Mock fetch for Edge Function call
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponseData),
+      });
+
+      const result = await deleteGift(giftId);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://test.supabase.co/functions/v1/delete-gift',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'authorization': 'Bearer test-token',
+          }),
+          body: JSON.stringify({
+            giftId,
+          }),
+        })
+      );
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle errors when deleting a gift via Edge Function', async () => {
+      const giftId = '123';
+
+      // Mock auth session
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { access_token: 'test-token' } },
+      });
+
+      // Mock fetch error
+      global.fetch.mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({ error: 'Unauthorized' }),
+      });
+
+      const result = await deleteGift(giftId);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unauthorized');
+    });
+  });
+
   describe('toggleBoughtStatus', () => {
     it('should toggle bought status successfully via Edge Function', async () => {
       const giftId = '123';
