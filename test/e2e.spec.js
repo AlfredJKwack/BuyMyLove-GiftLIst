@@ -40,6 +40,72 @@ test.describe('Gift List App', () => {
     await expect(page.locator('text=No gifts found')).toBeVisible();
   });
 
+  test('should display error modal for expired OTP link', async ({ page }) => {
+    // Navigate to the app with an error hash (simulating Supabase redirect)
+    await page.goto('http://localhost:5173/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+    
+    // Check that the error modal is displayed
+    await expect(page.locator('#admin-modal')).toBeVisible();
+    await expect(page.locator('.admin-panel h2')).toContainText('Authentication Error');
+    
+    // Check that the error message is user-friendly
+    await expect(page.locator('.admin-info p')).toContainText('Your login link has expired. Please request a new one.');
+    
+    // Check that the action buttons are present
+    await expect(page.locator('#error-close-btn')).toBeVisible();
+    await expect(page.locator('#try-again-link')).toBeVisible();
+    
+    // Check that the URL hash has been cleaned up
+    await expect(page).toHaveURL('http://localhost:5173/');
+  });
+
+  test('should close error modal when close button is clicked', async ({ page }) => {
+    // Navigate to the app with an error hash
+    await page.goto('http://localhost:5173/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+    
+    // Wait for the modal to appear
+    await expect(page.locator('#admin-modal')).toBeVisible();
+    
+    // Click the close button
+    await page.click('#error-close-btn');
+    
+    // Check that the modal is hidden
+    await expect(page.locator('#admin-modal')).toBeHidden();
+  });
+
+  test('should navigate to admin login when try again is clicked', async ({ page }) => {
+    // Navigate to the app with an error hash
+    await page.goto('http://localhost:5173/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+    
+    // Wait for the modal to appear
+    await expect(page.locator('#admin-modal')).toBeVisible();
+    
+    // Click the try again link
+    await page.click('#try-again-link');
+    
+    // Wait for the modal to reopen with the login form
+    await expect(page.locator('#admin-modal')).toBeVisible();
+    await expect(page.locator('form#login-form')).toBeVisible();
+    await expect(page.locator('input#email')).toBeVisible();
+    
+    // Check that the URL has changed to admin
+    await expect(page).toHaveURL('http://localhost:5173/#/admin');
+  });
+
+  test('should handle different error types with appropriate messages', async ({ page }) => {
+    // Test access denied error
+    await page.goto('http://localhost:5173/#error=access_denied&error_description=Access+was+denied');
+    await expect(page.locator('.admin-info p')).toContainText('Access was denied. This may be due to an expired or invalid link.');
+    
+    // Close modal and test another error type
+    await page.click('#error-close-btn');
+    
+    // Test server error
+    await page.goto('http://localhost:5173/#error=server_error&error_code=server_error&error_description=Internal+server+error');
+    await expect(page.locator('#admin-modal')).toBeVisible();
+    await expect(page.locator('.admin-info p')).toContainText('A server error occurred. Please try again later.');
+  });
+
   // This test would require authentication, which is challenging in E2E tests
   // In a real test suite, we would use test accounts or mock the authentication
   test.skip('should allow admin to add a gift', async ({ page }) => {

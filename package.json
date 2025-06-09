@@ -25,6 +25,7 @@
     "vitest": "^1.4.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.10"
+    "@supabase/supabase-js": "^2.49.10",
+    "pica": "^9.0.1"
   }
 }

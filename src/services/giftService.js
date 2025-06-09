@@ -287,9 +287,12 @@ export const logVisitorInteraction = async (cookieId) => {
   }
 };
 
+import pica from 'pica';
+const picaInstance = pica();
+
 /**
- * Process an image to create a 150x150 thumbnail
- * Resizes the image so the shortest side is 150px, then center-crops
+ * Process an image to create a 150x150 thumbnail using Pica for high-quality resizing.
+ * Resizes the image so the shortest side is 150px, then center-crops.
  * @param {File} file - The original image file
  * @returns {Promise<Blob|null>} - A promise that resolves to the processed image blob or null if processing failed
  */
@@ -297,69 +300,70 @@ const processImageThumbnail = (file) => {
   console.info('Processing image thumbnail for file:', file.name);
   return new Promise((resolve, reject) => {
     try {
-      // Create a FileReader to read the image file
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
-        // Create an image element to load the file
         const img = new Image();
-        
-        img.onload = () => {
-          // Create a canvas element for image processing
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Set canvas dimensions to 150x150 for the thumbnail
-          canvas.width = 150;
-          canvas.height = 150;
-          
-          // Calculate dimensions to resize the image so the shortest side is 150px
-          let sourceWidth = img.width;
-          let sourceHeight = img.height;
-          let sourceX = 0;
-          let sourceY = 0;
-          
-          // Determine which dimension is shorter and calculate scaling
-          if (sourceWidth > sourceHeight) {
-            // Height is the shorter side, scale to 150px height
-            sourceX = (sourceWidth - sourceHeight) / 2;
-            sourceWidth = sourceHeight;
-          } else {
-            // Width is the shorter side, scale to 150px width
-            sourceY = (sourceHeight - sourceWidth) / 2;
-            sourceHeight = sourceWidth;
-          }
-          
-          // Draw the image on the canvas with center cropping
-          ctx.drawImage(
-            img,
-            sourceX, sourceY, sourceWidth, sourceHeight, // Source rectangle
-            0, 0, 150, 150 // Destination rectangle
-          );
-          
-          // Convert the canvas to a blob
-          canvas.toBlob((blob) => {
+
+        img.onload = async () => {
+          try {
+            // Calculate the largest possible square (center-crop)
+            let sourceWidth = img.width;
+            let sourceHeight = img.height;
+            let sourceX = 0;
+            let sourceY = 0;
+
+            if (sourceWidth > sourceHeight) {
+              sourceX = (sourceWidth - sourceHeight) / 2;
+              sourceWidth = sourceHeight;
+            } else {
+              sourceY = (sourceHeight - sourceWidth) / 2;
+              sourceHeight = sourceWidth;
+            }
+
+            // Create a source canvas for the cropped square
+            const sourceCanvas = document.createElement('canvas');
+            sourceCanvas.width = sourceWidth;
+            sourceCanvas.height = sourceHeight;
+            const sourceCtx = sourceCanvas.getContext('2d');
+            sourceCtx.drawImage(
+              img,
+              sourceX, sourceY, sourceWidth, sourceHeight,
+              0, 0, sourceWidth, sourceHeight
+            );
+
+            // Create a destination canvas for the thumbnail
+            const destCanvas = document.createElement('canvas');
+            destCanvas.width = 150;
+            destCanvas.height = 150;
+
+            // Use Pica to resize the cropped square to 150x150
+            await picaInstance.resize(sourceCanvas, destCanvas);
+
+            // Use Pica to convert the resized canvas to a JPEG blob
+            const blob = await picaInstance.toBlob(destCanvas, 'image/jpeg', 0.9);
+
             if (blob) {
               resolve(blob);
             } else {
               reject(new Error('Failed to convert canvas to blob'));
             }
-          }, 'image/jpeg', 0.9); // Use JPEG format with 90% quality
+          } catch (err) {
+            reject(err);
+          }
         };
-        
+
         img.onerror = () => {
           reject(new Error('Failed to load image'));
         };
-        
-        // Set the image source to the file data
+
         img.src = e.target.result;
       };
-      
+
       reader.onerror = () => {
         reject(new Error('Failed to read file'));
       };
-      
-      // Read the file as a data URL
+
       reader.readAsDataURL(file);
     } catch (error) {
       reject(error);

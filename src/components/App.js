@@ -24,7 +24,8 @@ export class App {
     // Initialize components
     this.giftList = new GiftList(this.giftListContainer);
     this.giftForm = new GiftForm(this.giftFormModalBody);
-    this.authForm = new AuthForm(this.adminModalBody);
+    // Don't initialize AuthForm immediately - it will be initialized when needed
+    this.authForm = null;
     
     this.init();
   }
@@ -123,6 +124,11 @@ export class App {
   handleRouteChange() {
     const hash = window.location.hash;
     
+    // Check for errors in the hash first
+    if (this.checkForErrors(hash)) {
+      return; // Error modal will be shown, don't process other routes
+    }
+    
     if (hash === '#/admin') {
       this.currentRoute = '/admin';
       this.showAdminModal();
@@ -138,6 +144,11 @@ export class App {
    * Show the admin modal
    */
   showAdminModal() {
+    // Initialize AuthForm if not already done
+    if (!this.authForm) {
+      this.authForm = new AuthForm(this.adminModalBody);
+    }
+    
     this.adminModal.classList.remove('hidden');
     // Focus trap - focus the modal content
     this.adminModalBody.focus();
@@ -153,6 +164,14 @@ export class App {
     if (this.currentRoute === '/admin') {
       window.location.hash = '/';
     }
+    
+    // Reinitialize the AuthForm when closing the modal
+    // This ensures the modal content is reset to the proper auth form
+    setTimeout(() => {
+      if (this.authForm) {
+        this.authForm.render();
+      }
+    }, 100);
   }
 
   /**
@@ -180,6 +199,121 @@ export class App {
       this.giftList.isAdminUser = this.isAdminUser;
       this.giftList.loadGifts();
     });
+  }
+
+  /**
+   * Check for errors in the URL hash
+   * @param {string} hash - The current URL hash
+   * @returns {boolean} True if an error was found and handled
+   */
+  checkForErrors(hash) {
+    // Parse error parameters from hash
+    const errorMatch = hash.match(/[#&]error=([^&]+)/);
+    const errorCodeMatch = hash.match(/[#&]error_code=([^&]+)/);
+    const errorDescriptionMatch = hash.match(/[#&]error_description=([^&]+)/);
+    
+    if (errorMatch) {
+      const error = decodeURIComponent(errorMatch[1]);
+      const errorCode = errorCodeMatch ? decodeURIComponent(errorCodeMatch[1]) : '';
+      const errorDescription = errorDescriptionMatch ? decodeURIComponent(errorDescriptionMatch[1].replace(/\+/g, ' ')) : '';
+      
+      console.error('Authentication error detected:', { error, errorCode, errorDescription });
+      
+      // Show error modal
+      this.showErrorModal(error, errorCode, errorDescription);
+      
+      // Clean up the URL hash
+      window.history.replaceState(null, null, window.location.pathname);
+      
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Show error modal with the given error details
+   * @param {string} error - The error type
+   * @param {string} errorCode - The error code
+   * @param {string} errorDescription - The error description
+   */
+  showErrorModal(error, errorCode, errorDescription) {
+    // Get user-friendly error message
+    const errorMessage = this.getErrorMessage(error, errorCode, errorDescription);
+    
+    // Set the admin modal content to show the error
+    this.adminModalBody.innerHTML = `
+      <div class="admin-panel">
+        <h2>Authentication Error</h2>
+        
+        <div class="admin-info">
+          <p>${errorMessage}</p>
+        </div>
+        
+        <div class="admin-actions">
+          <button id="error-close-btn" class="btn btn-primary w-full">
+            Close
+          </button>
+          
+          <a href="#/admin" class="admin-link" id="try-again-link">
+            Try Login Again
+          </a>
+        </div>
+      </div>
+    `;
+    
+    // Show the modal
+    this.adminModal.classList.remove('hidden');
+    this.adminModalBody.focus();
+    
+    // Add event listeners
+    document.getElementById('error-close-btn').addEventListener('click', () => {
+      this.closeAdminModal();
+    });
+    
+    document.getElementById('try-again-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.closeAdminModal();
+      // Small delay to ensure modal is closed before reopening
+      setTimeout(() => {
+        window.location.hash = '#/admin';
+      }, 100);
+    });
+  }
+
+  /**
+   * Get user-friendly error message based on error details
+   * @param {string} error - The error type
+   * @param {string} errorCode - The error code
+   * @param {string} errorDescription - The error description
+   * @returns {string} User-friendly error message
+   */
+  getErrorMessage(error, errorCode, errorDescription) {
+    // Map common error codes to user-friendly messages
+    const errorMessages = {
+      'otp_expired': 'Your login link has expired. Please request a new one.',
+      'access_denied': 'Access was denied. This may be due to an expired or invalid link.',
+      'invalid_request': 'The login request was invalid. Please try again.',
+      'server_error': 'A server error occurred. Please try again later.',
+      'rate_limit_exceeded': 'Too many requests. Please wait a moment before trying again.'
+    };
+    
+    // Check for specific error codes first
+    if (errorCode && errorMessages[errorCode]) {
+      return errorMessages[errorCode];
+    }
+    
+    // Check for general error types
+    if (error === 'access_denied') {
+      return errorMessages['access_denied'];
+    }
+    
+    // Fallback to error description or generic message
+    if (errorDescription && errorDescription !== 'undefined') {
+      return errorDescription;
+    }
+    
+    return 'An authentication error occurred. Please try logging in again.';
   }
 
   /**
