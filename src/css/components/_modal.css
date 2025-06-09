@@ -183,19 +183,6 @@
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .admin-modal {
-    padding: var(--spacing-2);
-  }
-  
-  .admin-modal-content {
-    max-width: 100%;
-  }
-  
-  .admin-modal-content .login-form,
-  .admin-modal-content .admin-panel {
-    padding: var(--spacing-4);
-  }
-  
   .form-actions {
     flex-direction: column;
   }
