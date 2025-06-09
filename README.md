@@ -49,7 +49,6 @@ Version 0.2.0
 4. Update the `.env.local` file with your Supabase credentials:
    - `VITE_SUPABASE_URL` (your Supabase project URL)
    - `VITE_SUPABASE_ANON_KEY` (your Supabase anon key)
-   - `VITE_DEBUG` (optional, for debug logging)
 
 Note: All authenticated users (anyone who can log in via OTP) are considered admins and can manage gifts.
 
