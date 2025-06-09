@@ -61,10 +61,12 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    // Debug logging
-    console.log('Authorization header:', authHeader);
-    console.log('Anon key available:', !!Deno.env.get('SUPABASE_ANON_KEY'));
-    console.log('Supabase URL:', Deno.env.get('SUPABASE_URL'));
+    // Debug logging (only if DEBUG env is true)
+    const DEBUG = Deno.env.get('DEBUG') === 'true';
+    if (DEBUG) {
+      console.info('[add-gift] Request received for title:', title, 'hyperlink:', hyperlink);
+      console.info('[add-gift] Auth header present:', !!authHeader);
+    }
 
     if (!token) {
       return new Response(
@@ -80,8 +82,9 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     // Debug logging for auth result
-    console.log('Auth user result:', user ? { id: user.id, email: user.email, role: user.role } : null);
-    console.log('Auth error:', authError);
+    if (DEBUG) {
+      console.info('[add-gift] Auth result:', { user, authError });
+    }
     
     if (authError || !user) {
       console.error('Authentication failed - Error:', authError);
@@ -120,7 +123,7 @@ Deno.serve(async (req: Request) => {
       .select();
 
     if (error) {
-      console.error('Error adding gift:', error.message);
+      if (DEBUG) console.error('Error adding gift:', error.message);
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { 

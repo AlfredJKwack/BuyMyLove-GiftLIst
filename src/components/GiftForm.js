@@ -183,27 +183,28 @@ export class GiftForm {
         hyperlink: form.hyperlink.value.trim(),
         note: form.note.value.trim() || null,
       };
-      
+
       // Handle image upload if a new image was selected
       if (this.imageFile) {
         const uploadResult = await uploadGiftImage(this.imageFile);
         if (uploadResult.success) {
           formData.imagePath = uploadResult.path;
         } else {
+          this.showMessage(uploadResult.error || 'Failed to upload image', 'error');
           throw new Error(uploadResult.error || 'Failed to upload image');
         }
       } else if (this.isEditing) {
         // Keep the existing image path when editing
         formData.imagePath = this.currentGift.image_path;
       }
-      
+
       let result;
-      
+
       if (this.isEditing) {
         // Get bought status from toggle (only available when editing)
         const boughtToggle = document.getElementById('gift-bought');
         const bought = boughtToggle ? boughtToggle.checked : this.currentGift.bought;
-        
+
         // Update existing gift
         result = await updateGift(this.currentGift.id, {
           title: formData.title,
@@ -216,22 +217,50 @@ export class GiftForm {
         // Add new gift
         result = await addGift(formData);
       }
-      
+
       if (result.success) {
         // Notify the app that a gift was added or updated
         window.dispatchEvent(new CustomEvent('giftUpdated', { detail: result.data }));
         this.hide();
       } else {
+        this.showMessage(result.error || 'Failed to save gift', 'error');
         throw new Error(result.error || 'Failed to save gift');
       }
     } catch (error) {
-      console.error('Error saving gift:', error);
-      alert(`Failed to save gift: ${error.message}`);
+      const { error: debugError, log } = await import('../utils/debug.js');
+      debugError('Error saving gift:', error);
+      this.showMessage(`Failed to save gift: ${error.message}`, 'error');
     } finally {
       // Re-enable the submit button
       submitBtn.disabled = false;
       submitBtn.textContent = this.isEditing ? 'Update Gift' : 'Add Gift';
     }
+  }
+
+  /**
+   * Show an inline error or success message in the form
+   * @param {string} message - The message to display
+   * @param {string} type - 'error' or 'success'
+   */
+  showMessage(message, type = 'error') {
+    let msgEl = document.getElementById('gift-form-message');
+    if (!msgEl) {
+      msgEl = document.createElement('div');
+      msgEl.id = 'gift-form-message';
+      msgEl.className = 'mt-2 text-sm';
+      const form = document.getElementById('gift-form');
+      if (form) form.prepend(msgEl);
+    }
+    msgEl.textContent = message;
+    msgEl.className = 'mt-2 text-sm';
+    if (type === 'error') {
+      msgEl.classList.add('text-red-700', 'bg-red-100', 'rounded', 'p-2');
+    } else if (type === 'success') {
+      msgEl.classList.add('text-green-700', 'bg-green-100', 'rounded', 'p-2');
+    } else {
+      msgEl.classList.add('text-blue-700', 'bg-blue-100', 'rounded', 'p-2');
+    }
+    msgEl.classList.remove('hidden');
   }
 
   /**

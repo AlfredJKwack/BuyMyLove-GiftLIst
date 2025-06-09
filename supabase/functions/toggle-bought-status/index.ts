@@ -51,6 +51,12 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Debug logging (only if DEBUG env is true)
+    const DEBUG = Deno.env.get('DEBUG') === 'true';
+    if (DEBUG) {
+      console.info('[toggle-bought-status] Request for giftId:', giftId, 'bought:', bought, 'buyerId:', giftBuyerId);
+    }
+
     // Set the GUC for RLS policy
     await supabase.rpc('set_config', {
       setting_name: 'request.headers.x-gift-buyer-id',
@@ -66,7 +72,7 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (fetchError) {
-      console.error('Error fetching gift:', fetchError.message);
+      if (DEBUG) console.error('Error fetching gift:', fetchError.message);
       return new Response(
         JSON.stringify({ success: false, error: 'Gift not found' }),
         { 
@@ -103,7 +109,7 @@ Deno.serve(async (req: Request) => {
       .select();
 
     if (error) {
-      console.error('Error toggling bought status:', error.message);
+      if (DEBUG) console.error('Error toggling bought status:', error.message);
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { 

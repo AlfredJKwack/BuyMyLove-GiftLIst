@@ -64,18 +64,13 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    // Debug logging
-    console.log('=== DEBUGGING AUTH FLOW ===');
-    console.log('Raw authorization header:', authHeader);
-    console.log('Header length:', authHeader?.length);
-    console.log('Starts with Bearer:', authHeader?.startsWith('Bearer '));
-    console.log('Supabase URL:', Deno.env.get('SUPABASE_URL'));
-    console.log('Anon key available:', !!Deno.env.get('SUPABASE_ANON_KEY'));
-    console.log('Anon key first 20 chars:', Deno.env.get('SUPABASE_ANON_KEY')?.substring(0, 20));
-    console.log('Extracted token length:', token?.length);
-    console.log('Token first 20 chars:', token?.substring(0, 20));
-    console.log('Token last 20 chars:', token?.substring(token.length - 20));
-    console.log('Token has 3 parts (JWT format):', token?.split('.').length === 3);
+    // Debug logging (only if DEBUG env is true)
+    const DEBUG = Deno.env.get('DEBUG') === 'true';
+    if (DEBUG) {
+      console.info('[update-gift] Request received for giftId:', giftId);
+      console.info('[update-gift] Updates:', updates);
+      console.info('[update-gift] Auth header present:', !!authHeader);
+    }
 
     if (!token) {
       return new Response(
@@ -88,20 +83,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // Verify the user is authenticated using anon client with token
-    console.log('Calling supabase.auth.getUser() with token...');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    // Debug logging for auth result
-    console.log('=== AUTH RESULT ===');
-    console.log('Auth error:', authError);
-    console.log('Auth error type:', typeof authError);
-    console.log('Auth error message:', authError?.message);
-    console.log('User object:', user);
-    console.log('User ID:', user?.id);
-    console.log('User email:', user?.email);
-    console.log('User role:', user?.role);
-    console.log('User aud:', user?.aud);
-    console.log('=== END AUTH RESULT ===');
+    if (DEBUG) {
+      console.info('[update-gift] Auth result:', { user, authError });
+    }
     
     if (authError || !user) {
       console.error('Authentication failed - Error:', authError);
@@ -143,12 +128,9 @@ Deno.serve(async (req: Request) => {
       .update(updates)
       .eq('id', giftId)
       .select();
-    
-    console.log('=== BEGIN DB PAYLOADS ===');
-    console.log('giftId:', giftId);
-    console.log('updates:', updates);
-    console.log('Update gift response:', data, error);
-    console.log('=== END DB PAYLOADS ===');
+    if (DEBUG) {
+      console.info('[update-gift] Update response:', { data, error });
+    }
 
     if (error) {
       console.error('Error updating gift:', error.message);
