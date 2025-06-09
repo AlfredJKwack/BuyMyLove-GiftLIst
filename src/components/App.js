@@ -1,7 +1,7 @@
 import { GiftList } from './GiftList';
 import { GiftForm } from './GiftForm';
 import { AuthForm } from './AuthForm';
-import { isAdmin, getSession, setupAuthStateListener } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import { deleteGift } from '../services/giftService';
 
 /**
@@ -89,20 +89,12 @@ export class App {
    */
   setupAuthStateListener() {
     // Set up Supabase auth state listener
-    setupAuthStateListener(async (event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change detected in App:', event);
-      
-      // Update admin status
       this.isAdminUser = await isAdmin();
       this.giftList.isAdminUser = this.isAdminUser;
-      
-      // Refresh the gift list
       this.giftList.loadGifts();
-      
-      // Update navigation
       this.updateNavigation();
-      
-      // Notify AuthForm component about auth state change
       window.dispatchEvent(new CustomEvent('authStateChanged', { 
         detail: { 
           event, 
@@ -117,8 +109,6 @@ export class App {
       this.isAdminUser = await isAdmin();
       this.giftList.isAdminUser = this.isAdminUser;
       this.giftList.loadGifts();
-      
-      // Update navigation
       this.updateNavigation();
     });
   }
@@ -198,4 +188,10 @@ export class App {
       alert('An error occurred while deleting the gift');
     }
   }
+}
+
+// Helper: all authenticated users are admins
+async function isAdmin() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return !!session && !!session.user;
 }
