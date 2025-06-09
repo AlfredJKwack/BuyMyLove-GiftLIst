@@ -1,5 +1,5 @@
 import { fetchGifts, toggleBoughtStatus } from '../services/giftService';
-import { isAdmin } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import { getCookieId } from '../utils/cookies';
 
 /**
@@ -283,4 +283,10 @@ export class GiftList {
       window.dispatchEvent(new CustomEvent('deleteGift', { detail: { id } }));
     }
   }
+}
+
+// Helper: all authenticated users are admins
+async function isAdmin() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return !!session && !!session.user;
 }

@@ -74,28 +74,6 @@ export const getSession = async () => {
   }
 };
 
-/**
- * Check if the current user is an admin
- * @returns {Promise<boolean>} True if the user is an admin
- */
-export const isAdmin = async () => {
-  try {
-    // For development/testing purposes, always return true
-    // In production, this would check against actual authentication
-    if (supabaseUrl === 'https://example.supabase.co') {
-      return true; // Development mode - enable admin features for testing
-    }
-    
-    const session = await getSession();
-    if (!session) return false;
-    
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-    return session.user.email === adminEmail;
-  } catch (error) {
-    console.error('Error checking admin status:', error);
-    return false;
-  }
-};
 
 /**
  * Sign in with OTP (One-Time Password)
