@@ -373,7 +373,7 @@ const processImageThumbnail = (file) => {
  * @returns {Promise<{success: boolean, path: string|null, error: string|null}>} Result of the operation
  */
 export const uploadGiftImage = async (file) => {
-  info('Uploading gift image:', file.name);
+  console.info('Uploading gift image:', file.name);
   try {
     // Process the image to create a 150x150 thumbnail
     const thumbnailBlob = await processImageThumbnail(file);

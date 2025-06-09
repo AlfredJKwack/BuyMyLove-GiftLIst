@@ -167,7 +167,7 @@ export class GiftForm {
       }
     }
   }
-
+  
   /**
    * Handle form submission
    * @param {Event} e - The submit event
@@ -192,10 +192,11 @@ export class GiftForm {
 
       // Handle image upload if a new image was selected
       if (this.imageFile) {
+        console.info('Uploading image:', this.imageFile.name);
         const uploadResult = await uploadGiftImage(this.imageFile);
         if (uploadResult.success) {
           formData.imagePath = uploadResult.path;
-          console.info('Image uploaded successfully:', formData.imagePath);
+          console.info('Image uploaded successfully:', this.imageFile.name);
         } else {
           this.showMessage(uploadResult.error || 'Failed to upload image', 'error');
           throw new Error(uploadResult.error || 'Failed to upload image');
@@ -213,6 +214,7 @@ export class GiftForm {
         const bought = boughtToggle ? boughtToggle.checked : this.currentGift.bought;
 
         // Update existing gift
+        console.info('calling updateGift with id :', this.currentGift.id);
         result = await updateGift(this.currentGift.id, {
           title: formData.title,
           hyperlink: formData.hyperlink,
@@ -222,6 +224,7 @@ export class GiftForm {
         });
       } else {
         // Add new gift
+        console.log('calling addGift');
         result = await addGift(formData);
       }
 
