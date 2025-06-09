@@ -18,15 +18,12 @@ export class App {
     this.giftListContainer = document.getElementById('gift-list-container');
     this.adminModal = document.getElementById('admin-modal');
     this.adminModalBody = document.getElementById('admin-modal-body');
-    
-    // Create gift form container
-    this.giftFormContainer = document.createElement('div');
-    this.giftFormContainer.classList.add('hidden');
-    this.container.appendChild(this.giftFormContainer);
+    this.giftFormModal = document.getElementById('gift-form-modal');
+    this.giftFormModalBody = document.getElementById('gift-form-modal-body');
     
     // Initialize components
     this.giftList = new GiftList(this.giftListContainer);
-    this.giftForm = new GiftForm(this.giftFormContainer);
+    this.giftForm = new GiftForm(this.giftFormModalBody);
     this.authForm = new AuthForm(this.adminModalBody);
     
     this.init();
@@ -84,17 +81,28 @@ export class App {
    * Set up modal event listeners
    */
   setupModalEvents() {
-    // Close modal when clicking overlay
+    // Close admin modal when clicking overlay
     this.adminModal.addEventListener('click', (e) => {
       if (e.target === this.adminModal || e.target.classList.contains('admin-modal-overlay')) {
         this.closeAdminModal();
       }
     });
 
-    // Close modal with Escape key
+    // Close gift form modal when clicking overlay
+    this.giftFormModal.addEventListener('click', (e) => {
+      if (e.target === this.giftFormModal || e.target.classList.contains('admin-modal-overlay')) {
+        this.giftForm.hide();
+      }
+    });
+
+    // Close modals with Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !this.adminModal.classList.contains('hidden')) {
-        this.closeAdminModal();
+      if (e.key === 'Escape') {
+        if (!this.adminModal.classList.contains('hidden')) {
+          this.closeAdminModal();
+        } else if (!this.giftFormModal.classList.contains('hidden')) {
+          this.giftForm.hide();
+        }
       }
     });
   }

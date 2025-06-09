@@ -87,6 +87,100 @@
   background-color: var(--color-gray-200);
 }
 
+/* Gift form specific styles */
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  padding: var(--spacing-1);
+  border-radius: var(--border-radius);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.btn-close:hover {
+  color: var(--color-gray-700);
+  background-color: var(--color-gray-100);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.form-help {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin-top: var(--spacing-1);
+}
+
+.current-image {
+  margin: var(--spacing-2) 0;
+}
+
+.current-image-preview {
+  height: 8rem;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+}
+
+.image-processing {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: var(--spacing-2) 0;
+  padding: var(--spacing-2);
+  background-color: var(--color-gray-50);
+  border-radius: var(--border-radius);
+}
+
+.loading-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-gray-300);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+.image-preview {
+  margin: var(--spacing-2) 0;
+}
+
+.preview-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-1);
+}
+
+.preview-image {
+  height: 8rem;
+  width: 8rem;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .admin-modal {
@@ -100,5 +194,13 @@
   .admin-modal-content .login-form,
   .admin-modal-content .admin-panel {
     padding: var(--spacing-4);
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
   }
 }

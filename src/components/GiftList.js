@@ -189,7 +189,7 @@ export class GiftList {
           
           <!-- Footer with date -->
           <div class="gift-footer flex flex-col">
-            <span class="gift-date self-end">Added: ${dateAdded}</span>
+            <!-- Admin <span class="gift-date self-end">Added: ${dateAdded}</span> -->
             ${adminControls}
           </div>
         </div>

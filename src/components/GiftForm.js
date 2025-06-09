@@ -2,11 +2,12 @@ import { addGift, updateGift, uploadGiftImage } from '../services/giftService';
 
 /**
  * Gift Form Component
- * Handles adding and editing gifts (admin only)
+ * Handles adding and editing gifts (admin only) in a modal
  */
 export class GiftForm {
   constructor(container) {
     this.container = container;
+    this.modal = document.getElementById('gift-form-modal');
     this.isEditing = false;
     this.currentGift = null;
     this.imageFile = null;
@@ -38,10 +39,10 @@ export class GiftForm {
   }
 
   /**
-   * Show the form
+   * Show the modal
    */
   show() {
-    this.container.classList.remove('hidden');
+    this.modal.classList.remove('hidden');
     // Add a slight delay before focusing to ensure the DOM is ready
     setTimeout(() => {
       const titleInput = document.getElementById('gift-title');
@@ -52,10 +53,10 @@ export class GiftForm {
   }
 
   /**
-   * Hide the form
+   * Hide the modal
    */
   hide() {
-    this.container.classList.add('hidden');
+    this.modal.classList.add('hidden');
   }
 
   /**
@@ -80,68 +81,72 @@ export class GiftForm {
     ` : '';
     
     this.container.innerHTML = `
-      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded shadow-md w-full max-w-lg mx-auto max-h-screen overflow-y-auto">
-          <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-semibold color-gray-800">${title}</h2>
-              <button id="close-form-btn" class="btn btn-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <div class="login-form">
+        <div class="form-header">
+          <h2>${title}</h2>
+          <button id="close-form-btn" class="btn-close" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div id="gift-form-message" class="form-message hidden"></div>
+        
+        <form id="gift-form">
+          <div class="form-group">
+            <label for="gift-title" class="form-label">Title*</label>
+            <input type="text" id="gift-title" name="title" required
+              class="form-input"
+              value="${this.currentGift?.title || ''}">
+          </div>
+          
+          <div class="form-group">
+            <label for="gift-hyperlink" class="form-label">Link URL*</label>
+            <input type="url" id="gift-hyperlink" name="hyperlink" required
+              class="form-input"
+              value="${this.currentGift?.hyperlink || ''}">
+          </div>
+          
+          <div class="form-group">
+            <label for="gift-note" class="form-label">Note (optional)</label>
+            <textarea id="gift-note" name="note" rows="3"
+              class="form-input"
+            >${this.currentGift?.note || ''}</textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Image (optional)</label>
             
-            <form id="gift-form">
-              <div class="form-group">
-                <label for="gift-title" class="form-label">Title*</label>
-                <input type="text" id="gift-title" name="title" required
-                  class="form-input"
-                  value="${this.currentGift?.title || ''}">
-              </div>
-              
-              <div class="form-group">
-                <label for="gift-hyperlink" class="form-label">Link URL*</label>
-                <input type="url" id="gift-hyperlink" name="hyperlink" required
-                  class="form-input"
-                  value="${this.currentGift?.hyperlink || ''}">
-              </div>
-              
-              <div class="form-group">
-                <label for="gift-note" class="form-label">Note (optional)</label>
-                <textarea id="gift-note" name="note" rows="3"
-                  class="form-input"
-                >${this.currentGift?.note || ''}</textarea>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Image (optional)</label>
-                
+            <div class="flex ${this.currentGift?.image_path ? `gap-4`: ''} items-start">
+              <div class="flex-none">
                 ${this.currentGift?.image_path ? `
-                  <div class="mt-2 mb-2">
-                    <img src="${this.currentGift.image_path}" alt="Current image" class="h-32 object-cover rounded">
+                  <div class="current-image">
+                    <img src="${this.currentGift.image_path}" alt="Current image" class="current-image-preview">
                   </div>
                 ` : ''}
-                
-                <input type="file" id="gift-image" name="image" accept="image/*"
-                  class="form-input">
-                <p class="mt-1 text-sm color-gray-500">PNG, JPG, GIF up to 5MB</p>
                 <div id="image-preview-container"></div>
               </div>
               
-              ${boughtToggle}
-              
-              <div class="btn-group btn-space-x pt-4 flex justify-end">
-                <button type="button" id="cancel-btn" class="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" id="submit-btn" class="btn btn-primary">
-                  ${submitText}
-                </button>
+              <div class="flex-1">
+                <input type="file" id="gift-image" name="image" accept="image/*"
+                  class="form-input">
+                <p class="form-help">PNG, JPG, GIF up to 5MB</p>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
+          
+          ${boughtToggle}
+          
+          <div class="form-actions">
+            <button type="button" id="cancel-btn" class="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" id="submit-btn" class="btn btn-primary">
+              ${submitText}
+            </button>
+          </div>
+        </form>
       </div>
     `;
     
@@ -243,24 +248,19 @@ export class GiftForm {
    * @param {string} type - 'error' or 'success'
    */
   showMessage(message, type = 'error') {
-    let msgEl = document.getElementById('gift-form-message');
-    if (!msgEl) {
-      msgEl = document.createElement('div');
-      msgEl.id = 'gift-form-message';
-      msgEl.className = 'mt-2 text-sm';
-      const form = document.getElementById('gift-form');
-      if (form) form.prepend(msgEl);
+    const msgEl = document.getElementById('gift-form-message');
+    if (msgEl) {
+      msgEl.textContent = message;
+      msgEl.className = 'form-message';
+      
+      if (type === 'success') {
+        msgEl.classList.add('success');
+      } else if (type === 'error') {
+        msgEl.classList.add('error');
+      }
+      
+      msgEl.classList.remove('hidden');
     }
-    msgEl.textContent = message;
-    msgEl.className = 'mt-2 text-sm';
-    if (type === 'error') {
-      msgEl.classList.add('text-red-700', 'bg-red-100', 'rounded', 'p-2');
-    } else if (type === 'success') {
-      msgEl.classList.add('text-green-700', 'bg-green-100', 'rounded', 'p-2');
-    } else {
-      msgEl.classList.add('text-blue-700', 'bg-blue-100', 'rounded', 'p-2');
-    }
-    msgEl.classList.remove('hidden');
   }
 
   /**
@@ -390,16 +390,16 @@ export class GiftForm {
     
     if (this.isProcessingImage) {
       previewContainer.innerHTML = `
-        <div class="mt-2 mb-2 flex items-center justify-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span class="ml-2 text-sm text-gray-600">Processing image...</span>
+        <div class="image-processing">
+          <div class="loading-spinner"></div>
+          <span class="loading-text">Processing image...</span>
         </div>
       `;
     } else if (this.imagePreview) {
       previewContainer.innerHTML = `
-        <div class="mt-2 mb-2">
-          <p class="text-sm text-gray-600 mb-1">Thumbnail Preview (150x150):</p>
-          <img src="${this.imagePreview}" alt="Thumbnail preview" class="h-32 w-32 object-cover rounded">
+        <div class="image-preview">
+          <p class="preview-label">Thumbnail Preview (150x150):</p>
+          <img src="${this.imagePreview}" alt="Thumbnail preview" class="preview-image">
         </div>
       `;
     } else {
