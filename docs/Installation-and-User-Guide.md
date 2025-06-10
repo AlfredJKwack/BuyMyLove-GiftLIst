@@ -9,7 +9,7 @@
 - Supabase project (with Edge Functions, Auth, Storage, and Postgres enabled)
 - A configured email provider for Supabase Auth (for OTP login)
 
-### Setup Steps
+### Application Setup Steps
 
 1. **Clone the repository:**
    ```sh
@@ -33,15 +33,37 @@
      - Any other required keys
 
 4. **Set up Supabase:**
-   - Create the required tables and storage buckets using the provided SQL and Supabase dashboard.
-   - Deploy Edge Functions (`add-gift`, `update-gift`, `delete-gift`, `toggle-bought-status`) from `supabase/functions/`.
-   - Ensure a `gift-images` storage bucket exists and is public.
+   - See the section below for detailed Supabase setup instructions.
 
 5. **Run the development server:**
    ```sh
    npm run dev
    ```
-   - The app will be available at [http://localhost:3000](http://localhost:3000).
+   - The app will be available at [http://localhost:5173/](http://localhost:5173/) or similar. 
+
+### Supabase Setup
+
+1. Create a new Supabase project
+2. Install the Supabase CLI:
+   ```bash
+   npm install -g supabase
+   ```
+   Or look for alternative installation methods [here](https://github.com/supabase/cli#install-the-cli)
+
+3. Login to Supabase and link your project:
+   ```bash
+   supabase login
+   supabase link --project-ref YOUR_PROJECT_REF
+   ```
+4.  Create the required tables, security policies and storage buckets using the provided SQL (`./supabase/schema.sql`). Hint: Use the SQL editor in the Supabase dashboard.
+   
+5. Deploy Edge Functions (`add-gift`, `update-gift`, `delete-gift`, `toggle-bought-status`) from `supabase/functions/`. Hint: Use the script `./install-edge-functions.sh` for that.
+   ```bash
+   ./install-edge-functions.sh
+   ```
+6. Set up storage buckets as defined in the schema if not already done so. Ensure a `gift-images` storage bucket exists and is public.
+   
+7. Add at least one user in the Supabase dashboard authentication section to enable admin access. The email is what matters.
 
 ---
 
@@ -55,7 +77,7 @@
 
 ### Admin Users
 
-- **Login:** Click the "Admin" button and enter your email. You will receive a login link via email (OTP).
+- **Login:** Go to the secret URL (I know, cheesy) "/#/Admin" and enter your email. You will receive a login link via email (OTP).
 - **Add Gift:** After logging in, use the "Add Gift" button to add a new gift. Fill in the title, note, hyperlink, and optionally upload an image.
 - **Edit/Delete Gift:** Use the edit or delete buttons next to each gift to update or remove it.
 - **Image Upload:** Images are automatically resized and cropped to 150x150px before upload.
@@ -81,26 +103,21 @@
   ```sh
   npm test
   ```
-- **Test coverage includes:**
+- **Test coverage should include:**
   - Gift CRUD operations
   - Image upload and deletion
   - Anonymous bought status toggling
   - Admin login/logout (OTP)
   - Cookie-based identity
 
+but frankly... I did a bad job here.
+
 ---
 
 ## 5. Troubleshooting
 
-- **Supabase Auth Issues:** Ensure your email provider is configured in Supabase and the redirect URL matches your app.
+- **Supabase Auth Issues:** Ensure your email is configured as a user in the Supabase dashboard authentication section.
 - **Edge Function Errors:** Check Supabase logs for function errors and ensure all environment variables are set.
 - **Image Upload Fails:** Confirm the `gift-images` bucket exists and is public.
 - **Environment Variables:** Double-check `.env.local` for typos or missing values.
 
----
-
-## 6. Extending the Application
-
-- The codebase is structured for easy addition of new features (e.g., wishlists, comments).
-- Follow the existing patterns for new Edge Functions and UI components.
-- Keep code simple and avoid unnecessary abstraction.
