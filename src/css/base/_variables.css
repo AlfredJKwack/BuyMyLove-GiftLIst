@@ -26,18 +26,28 @@
   --color-black: #000000;
   
   /* Typography */
-  --font-family: Arial, sans-serif;
+  --font-family-serif: "Source Serif 4", serif;
+  --font-family-sans: "Libre Franklin", sans-serif;
+  --font-family: var(--font-family-serif);
+  
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
+  --font-size-xl: 1.6rem;
+  --font-size-2xl: 4.5rem;
+  --font-size-body: var(--font-size-base);
+  --font-size-h4: var(--font-size-lg);
+  --font-size-h3: var(--font-size-xl);
+  --font-size-h2: var(--font-size-2xl);
+  --font-size-h1: var(--font-size-2xl);
   
+  --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-black: 900;
   
   /* Spacing */
   --spacing-1: 0.25rem;

@@ -195,7 +195,8 @@
 /* Button Styles */
 .btn {
   font-size: var(--font-size-sm);
-  font-family: inherit;
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-light);
   border-radius: var(--border-radius);
   padding: var(--spacing-2) var(--spacing-5);
   transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);

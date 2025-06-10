@@ -78,7 +78,7 @@ export class GiftList {
     
     this.container.innerHTML = `
       <div class="text-center mb-8">
-        <h2 class="text-2xl">Gift List</h2>
+        <h2>Gift List</h2>
         <p class="text-gray">If you're going to buy a gift, mark it as bought to avoid duplicate purchases!</p>
       </div>
       

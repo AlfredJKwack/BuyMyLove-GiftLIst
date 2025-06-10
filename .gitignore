@@ -45,4 +45,4 @@ playwright-report
 # Supabase
 .supabase
 supabase/.temp/
-supabase/migrations/*
+supabase/migrations

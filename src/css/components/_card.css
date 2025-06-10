@@ -74,8 +74,6 @@
 }
 
 .gift-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
   margin-bottom: var(--spacing-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;

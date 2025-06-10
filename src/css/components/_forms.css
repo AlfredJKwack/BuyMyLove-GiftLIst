@@ -5,7 +5,9 @@
 
 .form-label {
   display: block;
-  font-size: var(--font-size-sm);
+font-size: var(--font-size-sm);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-light);
   font-weight: var(--font-weight-medium);
   color: var(--color-gray-700);
   margin-bottom: var(--spacing-2);
@@ -106,8 +108,8 @@ input[type="file"]::file-selector-button {
   border: none;
   border-radius: var(--border-radius);
   font-size: var(--font-size-sm);
-  font-family: inherit;
-  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-light);
   padding: var(--spacing-2) var(--spacing-3);
   cursor: pointer;
   transition: background-color var(--transition-fast), box-shadow var(--transition-fast);

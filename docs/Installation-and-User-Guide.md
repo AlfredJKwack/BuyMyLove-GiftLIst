@@ -13,7 +13,7 @@
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/your-username/BuyMyLove-GiftLIst.git
+   git clone https://github.com/AlfredJKwack/BuyMyLove-GiftLIst.git
    cd BuyMyLove-GiftLIst
    ```
 
