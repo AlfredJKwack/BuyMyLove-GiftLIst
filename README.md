@@ -4,6 +4,7 @@ A simple gift list application where users can share their wishlist with friends
 
 Version 0.2.0
 
+
 ## Features
 
 - Mobile-first responsive design
@@ -20,6 +21,10 @@ Version 0.2.0
 - **Build Tools**: Vite, PostCSS
 - **Styling**: Custom CSS (Tailwind-inspired)
 - **Testing**: Vitest for unit tests, Playwright for E2E tests
+
+## A picture is worth a thousand words...
+
+<img width="1499" alt="Screenshot 2025-06-10 at 11 38 09" src="https://github.com/user-attachments/assets/fe0f89b0-eb84-4fe2-b9c4-d3d83e5e453d" />
 
 ## Getting Started
 
