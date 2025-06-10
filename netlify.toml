@@ -2,19 +2,20 @@
   publish = "dist"
   command = "npm run build"
 
-[build.environment]
-  NODE_VERSION = "18"
+[dev]
+  command = "npm run dev"
+  port = 5173
+  targetPort = 5173
+  publish = "dist"
+  autoLaunch = true
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-[context.production.environment]
-  NODE_ENV = "production"
+[functions]
+  directory = "netlify/functions"
 
-[context.deploy-preview.environment]
-  NODE_ENV = "development"
-
-[context.branch-deploy.environment]
-  NODE_ENV = "development"
+[build.environment]
+  NODE_VERSION = "18"
