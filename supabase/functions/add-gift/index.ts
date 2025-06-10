@@ -1,11 +1,20 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+/**
+ * Get CORS headers with configurable origin from environment variable
+ * Set CORS_ALLOW_ORIGIN in Supabase Edge Function Secrets panel
+ * Recommended: Use your production frontend URL (e.g., https://yourdomain.com)
+ * Fallback: "*" for development (not recommended for production)
+ */
+function getCorsHeaders() {
+  const origin = Deno.env.get('CORS_ALLOW_ORIGIN') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 interface AddGiftRequest {
   title: string;
@@ -17,7 +26,7 @@ interface AddGiftRequest {
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders() });
   }
 
   try {
@@ -28,7 +37,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ success: false, error: 'Authorization required' }),
         { 
           status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
         }
       );
     }
@@ -41,7 +50,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ success: false, error: 'Title and hyperlink are required' }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
         }
       );
     }
@@ -73,7 +82,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ success: false, error: 'Invalid authorization header format' }),
         { 
           status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
         }
       );
     }
@@ -102,7 +111,7 @@ Deno.serve(async (req: Request) => {
         }),
         { 
           status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
         }
       );
     }
@@ -128,7 +137,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ success: false, error: error.message }),
         { 
           status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
         }
       );
     }
@@ -136,7 +145,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ success: true, data: data[0] }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
       }
     );
 
@@ -146,7 +155,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ success: false, error: 'Internal server error' }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...getCorsHeaders(), 'Content-Type': 'application/json' } 
       }
     );
   }

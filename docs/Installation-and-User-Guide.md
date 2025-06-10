@@ -63,7 +63,9 @@
    ```
 6. Set up storage buckets as defined in the schema if not already done so. Ensure a `gift-images` storage bucket exists and is public.
    
-7. Add at least one user in the Supabase dashboard authentication section to enable admin access. The email is what matters.
+7. Set up CORS by adding the `CORS_ALLOW_ORIGIN` secret to your Supabase edge function secrets. The value should be set to the domain of your frontend. More details on CORS implementation is described in `./docs/CORS-Configuration.md`. 
+   
+8. Add at least one user in the Supabase dashboard authentication section to enable admin access. The email is what matters.
 
 ---
 
