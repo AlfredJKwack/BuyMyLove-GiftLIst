@@ -10,18 +10,18 @@ BuyMyLove GiftList is a single-page web application for managing and sharing gif
 
 ```mermaid
 flowchart TD
-    subgraph Client (Browser)
+    subgraph Client_Browser
         A[GiftList UI]
-        B[GiftForm (Admin)]
-        C[AuthForm (Admin)]
+        B[GiftForm_Admin]
+        C[AuthForm_Admin]
         D[Anonymous User]
     end
 
     subgraph Supabase
         E[Edge Functions]
         F[Postgres DB]
-        G[Storage (gift-images)]
-        H[Auth (OTP)]
+        G[Storage_gift-images]
+        H[Auth_OTP]
     end
 
     A -- fetchGifts --> E
