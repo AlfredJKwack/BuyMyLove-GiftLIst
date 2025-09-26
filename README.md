@@ -30,7 +30,7 @@ Version 0.2.0
 
 ### Installation
 
-You will want to read the [Installation and User Guide](./Installation-and-User-Guide.md) for detailed instructions on setting up the project.
+You will want to read the [Installation and User Guide](./docs/Installation-and-User-Guide.md)) for detailed instructions on setting up the project.
 
 You'll need an account on Supabase for the back-end and one with Netlify or equivalent for the front-end. In a few words: Git clone this repo, install dependencies, set up Supabase, deploy the front-end. In supabase you'll need to set up a Supabase project, create the required tables, security policies, storage buckets, and deploy the Edge Functions (scripts provided). There's a few secrets to set up as well with both providers. Finally, you'll need to set up a user in the Supabase dashboard authentication section to enable admin access.
 
