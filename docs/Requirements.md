@@ -21,12 +21,12 @@
 
 - **Image Handling**
   - Images are resized and center-cropped to 150x150px client-side before upload.
-  - Images are stored in Supabase Storage and served via public URLs.
+  - Images are stored in the backend local storage and served via public URLs.
   - Only JPEG images are stored (all uploads are converted to JPEG).
 
 - **Security**
-  - All admin actions require a valid Supabase session (JWT).
-  - Anonymous actions use a cookie-based ID and the Supabase anon key.
+  - All admin actions require a valid backend session (JWT).
+  - Anonymous actions use a cookie-based ID and an anon key maintained in local environment files.
   - No personal data is stored for anonymous users.
   - No sensitive data is stored in the browser.
 
@@ -59,10 +59,10 @@
   - Uses cookies for anonymous user tracking.
 
 - **Backend**
-  - Supabase Edge Functions for all data mutations (add/update/delete/toggle).
-  - Supabase Postgres for data storage.
-  - Supabase Storage for image files.
-  - Supabase Auth for admin authentication (OTP only, no passwords).
+  - Edge Functions for all data mutations (add/update/delete/toggle).
+  - Postgres for data storage.
+  - Storage for image files.
+  - Auth for admin authentication (OTP only, no passwords).
 
 - **Environment**
   - All secrets and environment variables are stored in `.env.local`.

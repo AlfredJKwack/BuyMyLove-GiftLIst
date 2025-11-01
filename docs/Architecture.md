@@ -2,7 +2,7 @@
 
 ## Overview
 
-BuyMyLove GiftList is a single-page web application for managing and sharing gift ideas. It supports anonymous users (for marking gifts as bought) and admin users (for managing the gift list) via OTP email login. The backend is powered by Supabase (Edge Functions, Auth, and Storage).
+BuyMyLove GiftList is a single-page web application for managing and sharing gift ideas. It supports anonymous users (for marking gifts as bought) and admin users (for managing the gift list) via OTP email login. The backend is powered by node.js and a PostgreSQL database and local storage (S3 compatible).
 
 ---
 
@@ -122,18 +122,18 @@ sequenceDiagram
 - **GiftList**: Displays all gifts, allows anonymous users to mark as bought.
 - **GiftForm**: Admin-only, for adding/updating/deleting gifts and images.
 - **AuthForm**: Handles admin OTP login/logout.
-- **Supabase Edge Functions**: Secure backend logic for all gift actions.
-- **Supabase Storage**: Stores and serves gift images.
-- **Supabase Auth**: Handles admin authentication via OTP.
+- **Backend Edge Functions**: Secure backend logic for all gift actions.
+- **Backend Storage**: Stores and serves gift images.
+- **Backend Auth**: Handles admin authentication via OTP.
 
 ---
 
 ## Data Flow
 
-- All data operations (add/update/delete/toggle) are routed through Supabase Edge Functions for security.
+- All data operations (add/update/delete/toggle) are routed through backend functions for security.
 - Images are processed client-side (cropped/resized) before upload.
 - Anonymous users are tracked via a cookie-based ID, sent as a header for bought status toggling.
-- Admin status is determined by a valid Supabase session.
+- Admin status is determined by a valid JWT session.
 
 ---
 
