@@ -1,0 +1,114 @@
+import db from '../../lib/db.js';
+import { toggles } from '../../database/schema.js';
+import { eq, and } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+
+// Helper to extract visitor ID from cookie or create new one
+function getOrCreateVisitorId(req) {
+  if (!req.headers.cookie) return uuidv4();
+  
+  const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {});
+  
+  return cookies.visitor_id || uuidv4();
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { giftId, bought } = req.body;
+
+    if (!giftId || typeof bought !== 'boolean') {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+
+    const visitorId = getOrCreateVisitorId(req);
+
+    // Check if any toggle exists for this gift (global bought status)
+    const existingToggles = await db
+      .select()
+      .from(toggles)
+      .where(eq(toggles.giftId, giftId))
+      .limit(1);
+
+    const existingToggle = existingToggles.length > 0 ? existingToggles[0] : null;
+
+    // Check if user is admin
+    const isAdmin = req.headers.cookie?.includes('admin_token=');
+
+    if (bought) {
+      // User wants to mark as bought
+      if (existingToggle && existingToggle.bought) {
+        // Already bought by someone
+        if (existingToggle.visitorId === visitorId || isAdmin) {
+          // Same user or admin - allow (no-op or update)
+          return res.status(200).json({ success: true, bought: true, boughtBy: existingToggle.visitorId });
+        } else {
+          // Different user - not allowed
+          return res.status(403).json({ 
+            error: 'This item is already marked as bought by another user',
+            bought: true,
+            boughtBy: existingToggle.visitorId
+          });
+        }
+      } else {
+        // Not bought yet - create or update toggle
+        if (existingToggle) {
+          // Update existing record
+          await db
+            .update(toggles)
+            .set({ bought: true, visitorId })
+            .where(eq(toggles.giftId, giftId));
+        } else {
+          // Create new record
+          await db.insert(toggles).values({
+            giftId,
+            visitorId,
+            bought: true,
+          });
+        }
+      }
+    } else {
+      // User wants to mark as not bought
+      if (!existingToggle || !existingToggle.bought) {
+        // Already not bought - no-op
+        return res.status(200).json({ success: true, bought: false });
+      }
+
+      // Check permission to unbuy
+      if (existingToggle.visitorId !== visitorId && !isAdmin) {
+        return res.status(403).json({ 
+          error: 'Only the user who bought this item or an admin can mark it as not bought',
+          bought: true,
+          boughtBy: existingToggle.visitorId
+        });
+      }
+
+      // Remove the toggle (unbuy)
+      await db
+        .delete(toggles)
+        .where(eq(toggles.giftId, giftId));
+    }
+
+    // Set visitor_id cookie if not already set
+    const hasVisitorCookie = req.headers.cookie?.includes('visitor_id=');
+    if (!hasVisitorCookie) {
+      res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Path=/; HttpOnly; Max-Age=${60 * 60 * 24 * 365}; SameSite=Strict`);
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      bought,
+      boughtBy: bought ? visitorId : null
+    });
+  } catch (error) {
+    console.error('Error toggling bought status:', error);
+    return res.status(500).json({ error: 'Failed to toggle bought status' });
+  }
+}

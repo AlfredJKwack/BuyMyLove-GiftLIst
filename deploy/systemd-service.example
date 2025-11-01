@@ -1,0 +1,17 @@
+[Unit]
+Description=Gift List App
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/gift-app
+ExecStart=/usr/bin/npm start
+Restart=always
+Environment=NODE_ENV=production
+
+# Load environment variables from file
+EnvironmentFile=/opt/gift-app/.env.local
+
+[Install]
+WantedBy=multi-user.target

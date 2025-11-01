@@ -1,0 +1,28 @@
+# Caddy configuration for Gift List app
+
+gift.example.com {
+  # Reverse proxy to Next.js application
+  reverse_proxy localhost:3000
+
+  # Serve uploaded images directly from file system for better performance
+  handle_path /uploads/* {
+    root * /opt/gift-app/public/uploads
+    file_server
+  }
+
+  # Optional: Add security headers
+  header {
+    X-Frame-Options "SAMEORIGIN"
+    X-Content-Type-Options "nosniff"
+    X-XSS-Protection "1; mode=block"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  # Enable gzip compression
+  encode gzip
+
+  # Access logging (optional)
+  log {
+    output file /var/log/caddy/gift-app-access.log
+  }
+}

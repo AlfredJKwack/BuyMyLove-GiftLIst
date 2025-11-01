@@ -1,86 +1,225 @@
-# BuyMyLove Gift List
+# BuyMyLove GiftList
 
-A simple gift list application where users can share their wishlist with friends and family. Visitors can mark gifts as bought to prevent duplicate purchases.
-
-Version 0.2.0
-
+A gift list application where you can share your wishlist with friends and family. Visitors can mark gifts as bought to prevent duplicate purchases, and admins can manage the gift list.
 
 ## Features
 
-- Mobile-first responsive design
-- View gift list with details
-- Mark gifts as bought/available with visual toggle
-- Tracking of bought gifts to prevent duplicate purchases
-- Admin authentication for managing gifts via dedicated `#/admin` url
-- Visitor tracking for abuse prevention
+- **Public Gift List**: Anyone can view the gift list
+- **Anonymous Toggling**: Visitors can mark gifts as bought/unbought (tracked by cookie)
+- **Admin Management**: Secure OTP email login for gift management
+- **Image Processing**: Automatic resize and crop to 150x150px thumbnails
+- **Mobile-First Design**: Responsive layout optimized for all devices
 
 ## Tech Stack
 
-- **Frontend**: HTML, CSS, JavaScript (Vanilla)
-- **Backend**: Supabase (PostgreSQL, Auth, Storage)
-- **Build Tools**: Vite, PostCSS
-- **Styling**: Custom CSS (Tailwind-inspired)
-- **Testing**: Vitest for unit tests, Playwright for E2E tests
+- **Frontend**: Next.js (Pages Router), React
+- **Backend**: Next.js API Routes
+- **Database**: PostgreSQL with Drizzle ORM
+- **Auth**: JWT with OTP email authentication
+- **Image Processing**: Sharp (server-side)
+- **Styling**: Custom CSS with CSS variables
 
-## A picture is worth a thousand words...
+## Prerequisites
 
-<img width="1499" alt="Screenshot 2025-06-10 at 11 38 09" src="https://github.com/user-attachments/assets/fe0f89b0-eb84-4fe2-b9c4-d3d83e5e453d" />
+- Node.js 18+ 
+- PostgreSQL 14+
+- SMTP server for email (or local mail server)
 
-## Getting Started
+## Setup
 
-### Installation
+### 1. Clone the repository
 
-You will want to read the [Installation and User Guide](./docs/Installation-and-User-Guide.md)) for detailed instructions on setting up the project.
-
-You'll need an account on Supabase for the back-end and one with Netlify or equivalent for the front-end. In a few words: Git clone this repo, install dependencies, set up Supabase, deploy the front-end. In supabase you'll need to set up a Supabase project, create the required tables, security policies, storage buckets, and deploy the Edge Functions (scripts provided). There's a few secrets to set up as well with both providers. Finally, you'll need to set up a user in the Supabase dashboard authentication section to enable admin access.
-
-### Admin Panel
-
-The admin panel is accessible via the `#/admin` route and serves to log in and out. Authenticated admins will see additional controls to add, update, and delete gifts directly in the listing.
-
-**Authentication:**
-- All authenticated users are considered admins
-- Login is done via magic link sent to email address
-- Session persists across browser sessions
-- Secure logout functionality
-
-You must have set up a user in the Supabase dashboard authentication section to enable admin access. 
-
-## Project Structure
-
-```
-/
-├── docs/                 # Documentation
-├── public/               # Static assets
-├── src/
-│   ├── components/       # UI components
-│   ├── css/              # Modular CSS files
-│   │   ├── base/         # Base styles (reset, variables, typography)
-│   │   ├── components/   # Component styles (cards, forms, modal, etc.)
-│   │   ├── layout/       # Layout styles (containers, grid)
-│   │   ├── utils/        # Utility styles
-│   │   └── main.css      # Main CSS entry point
-│   ├── services/         # API services
-│   ├── utils/            # Utility functions
-│   ├── main.js           # Application entry point
-│   └── style.css         # Global styles
-├── supabase/             # Supabase configuration
-│   ├── functions/        # Edge Functions
-│   │   ├── toggle-bought-status/
-│   │   ├── add-gift/
-│   │   ├── update-gift/
-│   │   └── delete-gift/
-│   └── schema.sql        # Database schema
-├── test/                 # Test files
-├── .env.local.example    # Environment variables template
-├── index.html            # HTML entry point
-├── install-edge-functions.sh  # Edge Functions installer
-├── package.json          # Project dependencies
-└── vite.config.js        # Vite configuration
+```bash
+git clone https://github.com/AlfredJKwack/BuyMyLove-GiftLIst.git
+cd BuyMyLove-GiftLIst
 ```
 
-You can read more details about the technical aspects of the project in the [Architecture.md](./docs/Architecture.md) doc.
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Set up environment variables
+
+Copy `.env.local.example` to `.env.local` and configure:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local`:
+
+- Set `DATABASE_URL` to your PostgreSQL connection string
+- Set `ADMIN_EMAILS` (comma-separated list of allowed admin emails)
+- Generate and set `JWT_SECRET` (use a random string)
+- Configure SMTP settings (HOST, PORT, USER, PASS, FROM) for OTP email authentication
+- Set `APP_URL` to your application URL (e.g., http://localhost:3000 for dev)
+- Generate `ADMIN_PASSWORD_HASH`:
+
+```bash
+node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-password', 10));"
+```
+
+### 4. Set up the database
+
+Create the PostgreSQL database:
+
+```bash
+createdb giftlist
+```
+
+Run migrations:
+
+```bash
+npm run db:setup
+```
+
+This will:
+- Generate migration files from schema
+- Apply migrations to database
+
+### 5. Start the development server
+
+```bash
+npm run dev
+```
+
+Visit http://localhost:3000
+
+## Production Deployment
+
+### Build the application
+
+```bash
+npm run build
+```
+
+### Start production server
+
+```bash
+npm start
+```
+
+### Systemd Service (Linux)
+
+Create `/etc/systemd/system/giftlist.service`:
+
+```ini
+[Unit]
+Description=Gift List App
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/gift-app
+ExecStart=/usr/bin/npm start
+Restart=always
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl enable giftlist
+sudo systemctl start giftlist
+```
+
+### Reverse Proxy (Caddy)
+
+Add to Caddyfile:
+
+```
+gift.example.com {
+  reverse_proxy localhost:3000
+  
+  handle_path /uploads/* {
+    root * /opt/gift-app/public/uploads
+    file_server
+  }
+}
+```
+
+## Admin Access
+
+1. Click "Admin Login"
+2. Enter your admin email
+3. Check your email for login link
+4. Click the link to authenticate
+
+Once logged in, you can:
+- Add new gifts
+- Edit existing gifts
+- Upload/remove images
+- Delete gifts
+
+## Database Schema
+
+- `gifts`: Store gift information (title, note, url, image)
+- `toggles`: Track bought status per visitor per gift
+- `visitor_logs`: Track daily visitors
+- `settings`: Application settings (e.g., read_only_mode)
+- `otp_tokens`: Temporary OTP tokens for admin login
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run Next.js linting
+- `npm run db:generate` - Generate migration files from schema
+- `npm run db:migrate` - Run migrations
+- `npm run db:setup` - Generate and run migrations (convenience script)
+
+## Testing
+
+Placeholder tests are available in `tests/api.test.js`. To set up a full test suite:
+
+1. Install testing dependencies:
+```bash
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom supertest
+```
+
+2. Add Jest configuration to `package.json`:
+```json
+"jest": {
+  "testEnvironment": "node",
+  "transform": {}
+}
+```
+
+3. Update the test script in `package.json`:
+```json
+"test": "jest"
+```
+
+4. Set up a test database and implement the test cases in `tests/api.test.js`
+
+## Documentation
+
+For detailed technical information, see:
+- [Requirements](docs/Requirements.md) - Functional requirements and user stories
+- [Technical Specification](docs/Technical_Spec.md) - API design and data models
+- [Architecture](docs/Architecture.md) - System architecture and design decisions
+- [Deployment Guide](deploy/DEPLOYMENT.md) - Production deployment instructions
+
+## Security Considerations
+
+- All admin actions require JWT authentication
+- Anonymous actions use cookie-based visitor tracking
+- No personal data stored for anonymous users
+- OTP tokens expire after 15 minutes
+- Passwords are hashed with bcrypt
+- Images are validated and processed server-side
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see LICENSE file
+
+## Contributing
+
+Pull requests welcome! Please ensure the application builds successfully before submitting.
