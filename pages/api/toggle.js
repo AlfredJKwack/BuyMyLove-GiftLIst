@@ -2,6 +2,7 @@ import db from '../../lib/db.js';
 import { toggles } from '../../database/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { extractTokenFromCookie, verifyToken } from '../../lib/auth.js';
 
 // Helper to extract visitor ID from cookie or create new one
 function getOrCreateVisitorId(req) {
@@ -39,8 +40,10 @@ export default async function handler(req, res) {
 
     const existingToggle = existingToggles.length > 0 ? existingToggles[0] : null;
 
-    // Check if user is admin
-    const isAdmin = req.headers.cookie?.includes('admin_token=');
+    // Check if user is admin (verify JWT token)
+    const token = extractTokenFromCookie(req.headers.cookie);
+    const decoded = token && verifyToken(token);
+    const isAdmin = decoded?.type === 'admin';
 
     if (bought) {
       // User wants to mark as bought
