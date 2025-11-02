@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './scripts/loadEnv.js';
 
 export default {
   schema: './database/schema.js',
