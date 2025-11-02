@@ -128,7 +128,6 @@ WorkingDirectory=/opt/gift-app
 ExecStart=/usr/bin/npm start
 Restart=always
 Environment=NODE_ENV=production
-Environment=ADMIN_PASSWORD_HASH=...
 Environment=DATABASE_URL=postgres://...
 
 [Install]
@@ -137,7 +136,7 @@ WantedBy=multi-user.target
 
 ⸻
 
-9. Security Recommendations
+1. Security Recommendations
 	•	Lock down PostgreSQL to 127.0.0.1
 	•	Validate file types and sanitize filenames on upload
 	•	Limit file size to ~1MB

@@ -70,12 +70,7 @@ Update:
 - `JWT_SECRET` with a random secure string
 - `ANON_KEY` and `NEXT_PUBLIC_ANON_KEY` with same random string
 - SMTP settings for email
-- `ADMIN_PASSWORD_HASH` (generate with bcrypt)
-
-Generate admin password hash:
-```bash
-node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('YourAdminPassword', 10));"
-```
+- `APP_URL`  so that for email links are correct (e.g., https://gifts.yourdomain.com for dev)
 
 ## Step 5: Database Migration
 

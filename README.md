@@ -55,11 +55,6 @@ Edit `.env.local`:
 - Generate and set `JWT_SECRET` (use a random string)
 - Configure SMTP settings (HOST, PORT, USER, PASS, FROM) for OTP email authentication
 - Set `APP_URL` to your application URL (e.g., http://localhost:3000 for dev)
-- Generate `ADMIN_PASSWORD_HASH`:
-
-```bash
-node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-password', 10));"
-```
 
 ### 4. Set up the database
 
