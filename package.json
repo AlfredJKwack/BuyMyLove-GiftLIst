@@ -43,6 +43,8 @@
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.6",
     "drizzle-orm": "^0.44.7",
+    "file-type": "^21.0.0",
+    "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",
     "next": "^14.2.33",
     "nodemailer": "^7.0.10",
