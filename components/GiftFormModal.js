@@ -6,6 +6,7 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
   const [url, setUrl] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [cropBox, setCropBox] = useState(null);
   const [currentImageUrl, setCurrentImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -37,27 +38,35 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
         img.src = imageUrl;
       });
 
-      // Create canvas for resizing
+      // Calculate crop dimensions for center crop (using natural dimensions)
+      const sourceSize = Math.min(img.naturalWidth, img.naturalHeight);
+      const cropX = Math.floor((img.naturalWidth - sourceSize) / 2);
+      const cropY = Math.floor((img.naturalHeight - sourceSize) / 2);
+
+      // Store crop box coordinates for server-side processing
+      setCropBox({
+        x: cropX,
+        y: cropY,
+        width: sourceSize,
+        height: sourceSize
+      });
+
+      // Create canvas for preview only (150x150)
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Set canvas to 150x150
+      // Set canvas to 150x150 for preview
       canvas.width = 150;
       canvas.height = 150;
 
-      // Calculate crop dimensions for center crop
-      const sourceSize = Math.min(img.width, img.height);
-      const sourceX = (img.width - sourceSize) / 2;
-      const sourceY = (img.height - sourceSize) / 2;
-
-      // Draw the center-cropped and resized image
+      // Draw the center-cropped and resized preview
       ctx.drawImage(
         img,
-        sourceX, sourceY, sourceSize, sourceSize,
+        cropX, cropY, sourceSize, sourceSize,
         0, 0, 150, 150
       );
 
-      // Convert to blob
+      // Convert to blob for preview only
       const blob = await new Promise((resolve) => {
         canvas.toBlob(resolve, 'image/jpeg', 0.9);
       });
@@ -65,7 +74,9 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
       // Create preview URL
       const previewUrl = URL.createObjectURL(blob);
       setImagePreview(previewUrl);
-      setImageFile(blob);
+      
+      // Store the original file, not the resized blob
+      setImageFile(file);
       
       URL.revokeObjectURL(imageUrl);
     } catch (err) {
@@ -84,8 +95,8 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
         return;
       }
       
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError('Image file size must be less than 5MB');
+      if (file.size > 2.5 * 1024 * 1024) { // 2.5MB limit
+        setError('Image file size must be less than 2.5MB');
         return;
       }
       
@@ -96,6 +107,7 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview(null);
+    setCropBox(null);
     setCurrentImageUrl('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -111,9 +123,13 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
       let finalImageUrl = currentImageUrl;
 
       // Upload image if a new one was selected
-      if (imageFile) {
+      if (imageFile && cropBox) {
         const formData = new FormData();
-        formData.append('image', imageFile, 'gift.jpg');
+        formData.append('image', imageFile, imageFile.name);
+        formData.append('cropX', cropBox.x.toString());
+        formData.append('cropY', cropBox.y.toString());
+        formData.append('cropWidth', cropBox.width.toString());
+        formData.append('cropHeight', cropBox.height.toString());
 
         const uploadResponse = await fetch('/api/upload', {
           method: 'POST',
@@ -270,7 +286,7 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
                 disabled={loading || processingImage}
               />
               <p className="form-help">
-                Image will be resized to 150×150px
+                Image will be center-cropped and resized to 350×350px
               </p>
 
               {processingImage && (

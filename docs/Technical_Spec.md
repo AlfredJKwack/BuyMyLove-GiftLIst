@@ -131,12 +131,23 @@
 
 ### 4. Image Upload & Processing
 
-**API Route**: `/api/upload` (admin-only)
-- Uses formidable to parse multipart form data
-- Validates file type using file-type library
-- Resizes images to max 800px width using sharp
-- Saves to `public/uploads/` with unique UUID filenames
-- Returns public URL path
+**Hybrid Approach**: Client preview + server-side processing
+- **Client** (GiftFormModal.js):
+  - Generates 150×150px preview using canvas for UI display only
+  - Calculates center-square crop box coordinates from original image
+  - Uploads original file (not resized) with crop box metadata
+  - File size limit: 2.5MB
+  
+- **Server** (`/api/upload`, admin-only):
+  - Uses formidable to parse multipart form data with crop coordinates
+  - Validates file type using file-type library (MIME and magic bytes)
+  - Single Sharp pipeline:
+    - Extracts crop region using provided coordinates
+    - Resizes to 350×350px (fit: cover, lanczos3 kernel)
+    - Converts to JPEG (quality: 90)
+  - Falls back to center-square crop if coordinates missing/invalid
+  - Saves to `public/uploads/` with timestamp-based filenames
+  - Returns public URL path
 
 **Storage**: Local filesystem at `/usr/local/share/gift-app/public/uploads`
 
@@ -259,9 +270,10 @@ gift.example.com {
 - No remote access allowed
 
 **File Uploads**:
-- File type validation (MIME type checking)
-- Size limit enforced (configurable, default ~5MB)
-- Filename sanitization (UUID-based names)
+- File type validation (MIME + magic byte checking)
+- Size limit: 2.5MB enforced by formidable
+- Filename sanitization (timestamp-based names)
+- Crop box validation and bounds checking
 - Admin-only access
 
 **Authentication**:

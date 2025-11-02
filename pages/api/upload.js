@@ -17,7 +17,7 @@ function parseForm(req) {
   const form = formidable({
     multiples: false,
     maxFiles: 1,
-    maxFileSize: 1_500_000, // 1.5MB
+    maxFileSize: 2_500_000, // 2.5MB
     filter: (part) => {
       // Only accept parts that have a mimetype starting with 'image/'
       return Boolean(part.mimetype && part.mimetype.startsWith('image/'));
@@ -32,7 +32,7 @@ function parseForm(req) {
       const file = Array.isArray(files.image) ? files.image[0] : files.image;
       if (!file) return reject(new Error('NO_IMAGE'));
       
-      resolve(file);
+      resolve({ file, fields });
     });
   });
 }
@@ -44,7 +44,7 @@ async function handler(req, res) {
 
   try {
     // Parse upload with size and type limits
-    const file = await parseForm(req);
+    const { file, fields } = await parseForm(req);
 
     // Validate magic bytes to prevent mime type spoofing
     const fileType = await fileTypeFromFile(file.filepath);
@@ -69,12 +69,46 @@ async function handler(req, res) {
     const newFilename = `gift-${timestamp}.jpg`; // Always save as JPEG
     const outputPath = path.join(uploadsDir, newFilename);
 
-    // Process image with sharp: resize and convert to JPEG
+    // Process image with sharp: extract crop region and resize
     try {
-      await sharp(file.filepath)
-        .resize(150, 150, {
+      const image = sharp(file.filepath);
+      const metadata = await image.metadata();
+      
+      // Parse and validate crop box coordinates
+      let cropX = parseInt(fields.cropX?.[0] || fields.cropX) || 0;
+      let cropY = parseInt(fields.cropY?.[0] || fields.cropY) || 0;
+      let cropWidth = parseInt(fields.cropWidth?.[0] || fields.cropWidth) || 0;
+      let cropHeight = parseInt(fields.cropHeight?.[0] || fields.cropHeight) || 0;
+      
+      // If crop box not provided or invalid, compute center square
+      if (cropWidth <= 0 || cropHeight <= 0 || 
+          cropX < 0 || cropY < 0 ||
+          cropX + cropWidth > metadata.width ||
+          cropY + cropHeight > metadata.height) {
+        const sourceSize = Math.min(metadata.width, metadata.height);
+        cropX = Math.floor((metadata.width - sourceSize) / 2);
+        cropY = Math.floor((metadata.height - sourceSize) / 2);
+        cropWidth = sourceSize;
+        cropHeight = sourceSize;
+      }
+      
+      // Clamp crop box to image bounds
+      cropX = Math.max(0, Math.min(cropX, metadata.width - 1));
+      cropY = Math.max(0, Math.min(cropY, metadata.height - 1));
+      cropWidth = Math.min(cropWidth, metadata.width - cropX);
+      cropHeight = Math.min(cropHeight, metadata.height - cropY);
+      
+      await image
+        .extract({ 
+          left: cropX, 
+          top: cropY, 
+          width: cropWidth, 
+          height: cropHeight 
+        })
+        .resize(350, 350, {
           fit: 'cover',
           position: 'center',
+          kernel: sharp.kernel.lanczos3,
         })
         .jpeg({ quality: 90 })
         .toFile(outputPath);
@@ -96,7 +130,7 @@ async function handler(req, res) {
   } catch (error) {
     // Map formidable errors to appropriate HTTP status codes
     if (error?.code === 'LIMIT_FILE_SIZE' || error?.httpCode === 413) {
-      return res.status(413).json({ error: 'File too large (max 1.5MB)' });
+      return res.status(413).json({ error: 'File too large (max 2.5MB)' });
     }
     if (error?.message === 'NO_IMAGE') {
       return res.status(400).json({ error: 'No image file provided' });
