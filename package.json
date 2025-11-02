@@ -1,6 +1,6 @@
 {
   "name": "buymylove-giftlist",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "A simple gift list application where users can share their wishlist with friends and family. Visitors can mark gifts as bought to prevent duplicate purchases.",
   "main": "index.js",
   "directories": {
