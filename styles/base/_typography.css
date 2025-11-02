@@ -189,3 +189,9 @@ small {
   font-weight: var(--font-weight-normal);
   font-style: italic;
 }
+
+h1 {
+  font-family: "Style Script", serif;
+  font-weight: 400;
+  font-style: normal;
+}
