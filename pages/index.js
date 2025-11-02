@@ -8,7 +8,6 @@ export default function Home() {
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGiftFormModal, setShowGiftFormModal] = useState(false);
   const [editingGift, setEditingGift] = useState(null);
@@ -35,7 +34,6 @@ export default function Home() {
       const response = await fetch('/api/auth/me');
       const data = await response.json();
       setIsAdmin(data.isAdmin);
-      setAdminEmail(data.email || '');
     } catch (error) {
       console.error('Error checking admin status:', error);
     }
@@ -86,7 +84,6 @@ export default function Home() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setIsAdmin(false);
-      setAdminEmail('');
       window.location.reload();
     } catch (error) {
       console.error('Error logging out:', error);
@@ -123,7 +120,6 @@ export default function Home() {
               <div>
                 {isAdmin ? (
                   <div className="flex gap-4 items-center">
-                    <span className="text-sm text-gray-500">{adminEmail}</span>
                     <button 
                       onClick={handleAddGift}
                       className="form-button"

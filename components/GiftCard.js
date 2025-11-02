@@ -20,6 +20,9 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
 
   return (
     <div className={`gift-card ${gift.bought ? 'is-bought' : ''}`}>
+      {gift.bought && (
+        <span className="gift-ribbon gift-ribbon--tr">Already bought</span>
+      )}
       <div className="gift-card-image">
         <div className="image-container">
           {gift.imageUrl ? (
