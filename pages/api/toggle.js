@@ -3,18 +3,12 @@ import { toggles } from '../../database/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { extractTokenFromCookie, verifyToken } from '../../lib/auth.js';
+import { serialize, parse } from 'cookie';
 
-// Helper to extract visitor ID from cookie or create new one
+// Helper to extract visitor ID from cookie or create new one (supports both __Host- and legacy names)
 function getOrCreateVisitorId(req) {
-  if (!req.headers.cookie) return uuidv4();
-  
-  const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
-    const [key, value] = cookie.trim().split('=');
-    acc[key] = value;
-    return acc;
-  }, {});
-  
-  return cookies.visitor_id || uuidv4();
+  const cookies = parse(req.headers.cookie || '');
+  return cookies['__Host-visitor_id'] || cookies['visitor_id'] || uuidv4();
 }
 
 export default async function handler(req, res) {
@@ -100,9 +94,18 @@ export default async function handler(req, res) {
     }
 
     // Set visitor_id cookie if not already set
-    const hasVisitorCookie = req.headers.cookie?.includes('visitor_id=');
+    const cookies = parse(req.headers.cookie || '');
+    const hasVisitorCookie = Boolean(cookies['__Host-visitor_id'] || cookies['visitor_id']);
     if (!hasVisitorCookie) {
-      res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Path=/; HttpOnly; Max-Age=${60 * 60 * 24 * 365}; SameSite=Strict`);
+      const isProd = process.env.NODE_ENV === 'production';
+      const visitorCookie = serialize(isProd ? '__Host-visitor_id' : 'visitor_id', visitorId, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365
+      });
+      res.setHeader('Set-Cookie', visitorCookie);
     }
 
     return res.status(200).json({ 

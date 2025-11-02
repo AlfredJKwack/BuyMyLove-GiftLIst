@@ -1,18 +1,12 @@
 import db from '../../lib/db.js';
 import { gifts, toggles } from '../../database/schema.js';
 import { desc, eq } from 'drizzle-orm';
+import { parse } from 'cookie';
 
-// Helper to extract visitor ID from cookie
+// Helper to extract visitor ID from cookie (supports both __Host- and legacy names)
 function getVisitorId(req) {
-  if (!req.headers.cookie) return null;
-  
-  const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
-    const [key, value] = cookie.trim().split('=');
-    acc[key] = value;
-    return acc;
-  }, {});
-  
-  return cookies.visitor_id || null;
+  const cookies = parse(req.headers.cookie || '');
+  return cookies['__Host-visitor_id'] || cookies['visitor_id'] || null;
 }
 
 export default async function handler(req, res) {

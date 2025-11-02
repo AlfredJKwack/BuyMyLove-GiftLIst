@@ -2,6 +2,7 @@ import db from '../../../lib/db.js';
 import { otpTokens } from '../../../database/schema.js';
 import { eq, and, gt } from 'drizzle-orm';
 import { generateToken } from '../../../lib/auth.js';
+import { serialize } from 'cookie';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -46,10 +47,16 @@ export default async function handler(req, res) {
     });
 
     // Set cookie and redirect to home
-    res.setHeader(
-      'Set-Cookie',
-      `admin_token=${jwtToken}; Path=/; HttpOnly; Max-Age=${60 * 60 * 24 * 7}; SameSite=Strict`
-    );
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieName = isProd ? '__Host-admin_token' : 'admin_token';
+    const cookie = serialize(cookieName, jwtToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7
+    });
+    res.setHeader('Set-Cookie', cookie);
 
     return res.redirect('/?login=success');
   } catch (error) {
