@@ -9,6 +9,8 @@
 
 - **Anonymous User Actions**
   - Any user (no login required) can mark a gift as "bought" or "unbought".
+  - The user who marked an item as "bought" is the only one who can unset its state.
+  - All users see when an item is "bought".
   - Anonymous users are tracked via a cookie-based ID (no personal data stored).
   - Each user can only toggle the bought status for each gift once per device/browser.
 
@@ -40,7 +42,9 @@
 ## User Stories
 
 - **As a visitor**, I can view the list of gifts without logging in.
+- **As a visitor**, I can see certain items are bought and others are not.
 - **As a visitor**, I can mark a gift as bought or unbought, and my choice is remembered on my device.
+- **As a visitor**, I can only mark a gift as unbought if I previously marked it as bought.  
 - **As an admin**, I can log in securely using an email OTP link.
 - **As an admin**, I can add new gifts with a title, note, hyperlink, and image.
 - **As an admin**, I can update or delete any gift.
@@ -51,30 +55,7 @@
 
 ## Technical Requirements
 
-- **Frontend**
-  - Single-page application (SPA), mobile-first.
-  - Uses hash-based routing for navigation.
-  - Written in modern JavaScript (ES6+), no framework lock-in.
-  - Uses Pica for client-side image processing.
-  - Uses cookies for anonymous user tracking.
-
-- **Backend**
-  - Edge Functions for all data mutations (add/update/delete/toggle).
-  - Postgres for data storage.
-  - Storage for image files.
-  - Auth for admin authentication (OTP only, no passwords).
-
-- **Environment**
-  - All secrets and environment variables are stored in `.env.local`.
-  - No secrets or sensitive data are committed to the repository.
-
-- **Testing**
-  - Unit and end-to-end tests for all major features.
-  - Tests for cookie-based identity and edge function integration.
-
-- **Extensibility**
-  - Codebase is structured for easy addition of new features (e.g., wishlists, comments).
-  - No unnecessary abstraction; simplicity and clarity are prioritized.
+Technical specifications are detailed in the [Technical Specifications](Technical_Spec.md) document.
 
 ---
 

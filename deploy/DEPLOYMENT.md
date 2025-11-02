@@ -17,11 +17,8 @@ sudo apt update && sudo apt upgrade -y
 # Install PostgreSQL
 sudo apt install postgresql postgresql-contrib
 
-# Install Node.js (via nvm recommended)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-source ~/.bashrc
-nvm install 18
-nvm use 18
+# Install Node.js 
+sudo apt install nodejs npm
 
 # Install Caddy
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
@@ -39,7 +36,7 @@ sudo -u postgres psql
 
 CREATE DATABASE giftlist;
 CREATE USER giftadmin WITH PASSWORD 'your-secure-password';
-GRANT ALL PRIVILEGES ON DATABASE giftlist TO giftadmin;
+ALTER DATABASE giftlist OWNER TO giftadmin;
 \q
 ```
 
@@ -47,12 +44,12 @@ GRANT ALL PRIVILEGES ON DATABASE giftlist TO giftadmin;
 
 ```bash
 # Create application directory
-sudo mkdir -p /opt/gift-app
-sudo chown $USER:$USER /opt/gift-app
+sudo mkdir -p /usr/local/share/gift-app
+sudo chown $USER:$USER /usr/local/share/gift-app
 
-# Clone and build
-cd /opt/gift-app
-git clone https://github.com/AlfredJKwack/BuyMyLove-GiftLIst.git .
+# Clone just what you need and build
+cd /usr/local/share/gift-app
+git clone --depth 1 --branch main --single-branch https://github.com/AlfredJKwack/BuyMyLove-GiftLIst.git .
 npm install
 npm run build
 ```
@@ -67,10 +64,10 @@ nano .env.local
 
 Update:
 - `DATABASE_URL` with your PostgreSQL connection string
+- `ADMIN_EMAILS` with the email addresses of the admins.
 - `JWT_SECRET` with a random secure string
-- `ANON_KEY` and `NEXT_PUBLIC_ANON_KEY` with same random string
 - SMTP settings for email
-- `APP_URL`  so that for email links are correct (e.g., https://gifts.yourdomain.com for dev)
+- `APP_URL`  so that for email links are correct (e.g., https://gifts.yourdomain.com for dev)no
 
 ## Step 5: Database Migration
 
@@ -93,6 +90,14 @@ sudo systemctl start giftlist
 
 # Check status
 sudo systemctl status giftlist
+
+# Ensure www-data user (set in Systemd file) has ownership to the uploads
+sudo chown -R www-data:www-data /usr/local/share/gift-app/public/uploads
+# Owner has rwx, group has rx and others have rx on the directory
+sudo find /usr/local/share/gift-app/public/uploads -type d -exec chmod 755 {} \;
+# Owner has rw, group has r and others have r on the files
+sudo find /usr/local/share/gift-app/public/uploads -type f -exec chmod 644 {} \;
+
 ```
 
 ## Step 7: Caddy Configuration
@@ -145,7 +150,7 @@ sudo journalctl -u caddy -f
 ### Update Application
 
 ```bash
-cd /opt/gift-app
+cd /usr/local/share/gift-app
 git pull
 npm install
 npm run build
@@ -197,19 +202,3 @@ sudo systemctl status postgresql
 - Check if SMTP port (587/465) is accessible
 - Review application logs for email errors
 
-## Performance Optimization
-
-1. **Enable Redis caching** (future enhancement)
-2. **Use CDN** for static assets
-3. **Enable HTTP/2** in Caddy (enabled by default)
-4. **Database indexing** for large datasets
-5. **Image optimization** is handled by Sharp
-
-## Scaling Considerations
-
-For high traffic:
-1. Use a load balancer
-2. Run multiple app instances
-3. Use connection pooling for PostgreSQL
-4. Consider read replicas for database
-5. Implement caching layer (Redis)
