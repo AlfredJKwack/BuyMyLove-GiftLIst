@@ -15,6 +15,7 @@
 @import './components/_toggle.css';
 @import './components/_card.css';
 @import './components/_modal.css';
+@import './components/_tooltip.css';
 
 /* Utilities */
 @import './utils/_helpers.css';
