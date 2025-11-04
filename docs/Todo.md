@@ -7,5 +7,5 @@
 
 ## User Experience.
 - [ ] Make a few themes for occasions like Christmas, Halloween, Birthdays etc. 
-- [ ] If someone other than the Admin ticks a "bought" then have some festive animation with confetti fly across the screen and pop up a "jeez thanks"!
+- [x] If someone other than the Admin ticks a "bought" then have some festive animation with confetti fly across the screen and pop up a "jeez thanks"!
 - [ ] Make a good looking set of error pages: 404, 500, 403 etc.
