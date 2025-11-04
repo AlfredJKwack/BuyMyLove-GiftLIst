@@ -39,20 +39,27 @@ export default function Home() {
     }
   };
 
-  const fetchGifts = async () => {
+  const fetchGifts = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const response = await fetch('/api/gifts');
       const data = await response.json();
       setGifts(data);
     } catch (error) {
       console.error('Error fetching gifts:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   const handleToggleBought = async (giftId, bought) => {
+    // Optimistic update: immediately update UI
+    let previousGifts;
+    setGifts((prev) => {
+      previousGifts = prev;
+      return prev.map((g) => (g.id === giftId ? { ...g, bought } : g));
+    });
+
     try {
       const response = await fetch('/api/toggle', {
         method: 'POST',
@@ -65,18 +72,40 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        // Refetch all gifts to ensure we have the latest global state
-        await fetchGifts();
+        // Apply authoritative server response fields
+        setGifts((prev) =>
+          prev.map((g) =>
+            g.id === giftId
+              ? {
+                  ...g,
+                  ...('bought' in data ? { bought: data.bought } : {}),
+                  ...(data.boughtBy ? { boughtBy: data.boughtBy } : {}),
+                }
+              : g
+          )
+        );
+
+        // Silent re-sync to pick up other users' changes without showing spinner
+        await fetchGifts(false);
       } else if (response.status === 403) {
-        // Permission denied - show user-friendly message
+        // Permission denied: revert optimistic update
+        setGifts(previousGifts);
         alert(data.error || 'You do not have permission to change this item.');
+        // Re-sync to ensure canonical state
+        await fetchGifts(false);
       } else {
+        // Unexpected error: revert optimistic update
+        setGifts(previousGifts);
         console.error('Toggle failed:', response.status, data);
         alert('Failed to update gift status. Please try again.');
+        await fetchGifts(false);
       }
     } catch (error) {
+      // Network error: revert optimistic update
+      setGifts(previousGifts);
       console.error('Error toggling bought status:', error);
       alert('Network error. Please check your connection and try again.');
+      await fetchGifts(false);
     }
   };
 
