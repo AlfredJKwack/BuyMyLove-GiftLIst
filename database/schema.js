@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, boolean, uuid, unique } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, boolean, uuid, unique, doublePrecision } from 'drizzle-orm/pg-core';
 
 // Gifts table
 const gifts = pgTable('gifts', {
@@ -7,6 +7,8 @@ const gifts = pgTable('gifts', {
   note: text('note'),
   url: text('url'),
   imageUrl: text('image_url'),
+  imageFocalX: doublePrecision('image_focal_x'),
+  imageFocalY: doublePrecision('image_focal_y'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

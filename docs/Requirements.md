@@ -58,6 +58,8 @@
 - **As an admin**, image uploads are handled correctly (no double-cropping) and stored at expected quality after server processing.
 - **As an admin**, authentication uses email OTP only (no password login), and the UI does not expose the admin email while logged in.
 - **As an admin**, I can log out at any time.
+- **As a visitor**, I can view the gift list on a mobile and desktop devices, where each card automatically switches layout to ensure optimal image and content visibility.
+- **As a visitor**, I benefit from intelligently focused images, ensuring that important parts of the images are visible regardless of the device I use.
 
 ---
 

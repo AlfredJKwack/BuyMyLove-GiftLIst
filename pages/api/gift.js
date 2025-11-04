@@ -33,7 +33,7 @@ async function handler(req, res) {
     switch (method) {
       case 'POST': {
         // Add new gift
-        const { title, note, url, imageUrl } = req.body;
+        const { title, note, url, imageUrl, imageFocalX, imageFocalY } = req.body;
 
         if (!title) {
           return res.status(400).json({ error: 'Title is required' });
@@ -46,6 +46,8 @@ async function handler(req, res) {
             note: note || null,
             url: url || null,
             imageUrl: imageUrl || null,
+            imageFocalX: imageFocalX !== undefined ? imageFocalX : null,
+            imageFocalY: imageFocalY !== undefined ? imageFocalY : null,
           })
           .returning();
 
@@ -54,7 +56,7 @@ async function handler(req, res) {
 
       case 'PUT': {
         // Update existing gift
-        const { id, title, note, url, imageUrl } = req.body;
+        const { id, title, note, url, imageUrl, imageFocalX, imageFocalY } = req.body;
 
         if (!id || !title) {
           return res.status(400).json({ error: 'ID and title are required' });
@@ -80,6 +82,8 @@ async function handler(req, res) {
             note: note || null,
             url: url || null,
             imageUrl: newImageUrl,
+            imageFocalX: imageFocalX !== undefined ? imageFocalX : null,
+            imageFocalY: imageFocalY !== undefined ? imageFocalY : null,
           })
           .where(eq(gifts.id, id))
           .returning();

@@ -7,7 +7,7 @@ A gift list application where you can share your wishlist with friends and famil
 - **Public Gift List**: Anyone can view the gift list
 - **Anonymous Toggling**: Visitors can mark gifts as bought/unbought (tracked by cookie)
 - **Admin Management**: Secure OTP email login for gift management
-- **Image Processing**: Automatic resize and crop to 150x150px thumbnails
+- **Image Processing**: Automatic resize and crop of uploaded images to create thumbnails 
 - **Mobile-First Design**: Responsive layout optimized for all devices
 
 ## Tech Stack
@@ -16,7 +16,7 @@ A gift list application where you can share your wishlist with friends and famil
 - **Backend**: Next.js API Routes
 - **Database**: PostgreSQL with Drizzle ORM
 - **Auth**: JWT with OTP email authentication
-- **Image Processing**: Sharp (server-side)
+- **Image Processing**: Sharp (server-side) & smartcrop.js
 - **Styling**: Custom CSS with CSS variables
 
 ## Prerequisites
@@ -84,60 +84,7 @@ Visit http://localhost:3000
 
 ## Production Deployment
 
-### Build the application
-
-```bash
-npm run build
-```
-
-### Start production server
-
-```bash
-npm start
-```
-
-### Systemd Service (Linux)
-
-Create `/etc/systemd/system/giftlist.service`:
-
-```ini
-[Unit]
-Description=Gift List App
-After=network.target postgresql.service
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/opt/gift-app
-ExecStart=/usr/bin/npm start
-Restart=always
-Environment=NODE_ENV=production
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start:
-
-```bash
-sudo systemctl enable giftlist
-sudo systemctl start giftlist
-```
-
-### Reverse Proxy (Caddy)
-
-Add to Caddyfile:
-
-```
-gift.example.com {
-  reverse_proxy localhost:3000
-  
-  handle_path /uploads/* {
-    root * /opt/gift-app/public/uploads
-    file_server
-  }
-}
-```
+See the [Deployment Guide](deploy/DEPLOYMENT.md) for production setup instructions.
 
 ## Admin Access
 
@@ -201,6 +148,8 @@ For detailed technical information, see:
 - [Technical Specification](docs/Technical_Spec.md) - API design and data models
 - [Architecture](docs/Architecture.md) - System architecture and design decisions
 - [Deployment Guide](deploy/DEPLOYMENT.md) - Production deployment instructions
+
+For a thorough overview of what overengineering looks like, see [Responsive Image Implementation](docs/Responsive_Image_Implementation.md)
 
 ## Security Considerations
 

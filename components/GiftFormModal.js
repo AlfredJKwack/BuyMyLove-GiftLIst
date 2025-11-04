@@ -6,7 +6,6 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
   const [url, setUrl] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [cropBox, setCropBox] = useState(null);
   const [currentImageUrl, setCurrentImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -38,20 +37,11 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
         img.src = imageUrl;
       });
 
-      // Calculate crop dimensions for center crop (using natural dimensions)
+      // Create canvas for preview (150x150)
+      // Calculate center crop for preview
       const sourceSize = Math.min(img.naturalWidth, img.naturalHeight);
       const cropX = Math.floor((img.naturalWidth - sourceSize) / 2);
       const cropY = Math.floor((img.naturalHeight - sourceSize) / 2);
-
-      // Store crop box coordinates for server-side processing
-      setCropBox({
-        x: cropX,
-        y: cropY,
-        width: sourceSize,
-        height: sourceSize
-      });
-
-      // Create canvas for preview only (150x150)
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
@@ -107,7 +97,6 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    setCropBox(null);
     setCurrentImageUrl('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -123,13 +112,12 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
       let finalImageUrl = currentImageUrl;
 
       // Upload image if a new one was selected
-      if (imageFile && cropBox) {
+      let focalX = null;
+      let focalY = null;
+      
+      if (imageFile) {
         const formData = new FormData();
         formData.append('image', imageFile, imageFile.name);
-        formData.append('cropX', cropBox.x.toString());
-        formData.append('cropY', cropBox.y.toString());
-        formData.append('cropWidth', cropBox.width.toString());
-        formData.append('cropHeight', cropBox.height.toString());
 
         const uploadResponse = await fetch('/api/upload', {
           method: 'POST',
@@ -142,6 +130,12 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
 
         const uploadData = await uploadResponse.json();
         finalImageUrl = uploadData.imageUrl;
+        
+        // Capture focal point from upload response
+        if (uploadData.focalPoint) {
+          focalX = uploadData.focalPoint.x;
+          focalY = uploadData.focalPoint.y;
+        }
       }
 
       // Create or update gift
@@ -150,6 +144,8 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
         note: note || null,
         url: url || null,
         imageUrl: finalImageUrl || null,
+        imageFocalX: focalX,
+        imageFocalY: focalY,
       };
 
       if (gift) {

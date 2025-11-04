@@ -157,6 +157,19 @@ npm run build
 sudo systemctl restart giftlist
 ```
 
+### Update Database
+Use any strategy from https://orm.drizzle.team/docs/migrations
+
+```bash
+npm run db:push
+```
+
+or
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
 ### Backup Database
 
 ```bash
@@ -201,4 +214,23 @@ sudo systemctl status postgresql
 - Verify SMTP credentials in `.env.local`
 - Check if SMTP port (587/465) is accessible
 - Review application logs for email errors
+
+### Some images do not have focal points
+Focal points are calculated when images are uploaded. If you have existing images without focal points, you can retroactively compute them and update the database and save users a few milliwats of compute power. See [Responsive Image Implementation](docs/Responsive_Image_Implementation.md)) for more details.
+
+```bash
+NODE_ENV=production DATABASE_URL="your_database_url" node scripts/compute_focal_points.js
+```
+
+Preview changes without updating database (dry run):
+
+```bash
+DRY_RUN=true NODE_ENV=production DATABASE_URL="your_database_url" node scripts/compute_focal_points.js
+```
+
+Custom batch size:
+
+```bash
+BATCH_SIZE=5 NODE_ENV=production DATABASE_URL="your_database_url" node scripts/compute_focal_points.js
+`
 

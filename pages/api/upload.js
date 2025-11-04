@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import smartcrop from 'smartcrop-sharp';
 import { requireAdmin } from '../../lib/auth.js';
 import formidable from 'formidable';
 import { fileTypeFromFile } from 'file-type';
@@ -69,22 +70,26 @@ async function handler(req, res) {
     const newFilename = `gift-${timestamp}.jpg`; // Always save as JPEG
     const outputPath = path.join(uploadsDir, newFilename);
 
-    // Process image with sharp: extract crop region and resize
+    // Process image with sharp and smartcrop
+    let focalPoint = null;
+    
     try {
-      const image = sharp(file.filepath);
-      const metadata = await image.metadata();
+      // Step 1: Use smartcrop to find optimal 500x500 crop region
+      const firstPassResult = await smartcrop.crop(file.filepath, { 
+        width: 500, 
+        height: 500 
+      });
       
-      // Parse and validate crop box coordinates
-      let cropX = parseInt(fields.cropX?.[0] || fields.cropX) || 0;
-      let cropY = parseInt(fields.cropY?.[0] || fields.cropY) || 0;
-      let cropWidth = parseInt(fields.cropWidth?.[0] || fields.cropWidth) || 0;
-      let cropHeight = parseInt(fields.cropHeight?.[0] || fields.cropHeight) || 0;
+      let cropX, cropY, cropWidth, cropHeight;
       
-      // If crop box not provided or invalid, compute center square
-      if (cropWidth <= 0 || cropHeight <= 0 || 
-          cropX < 0 || cropY < 0 ||
-          cropX + cropWidth > metadata.width ||
-          cropY + cropHeight > metadata.height) {
+      if (firstPassResult && firstPassResult.topCrop) {
+        cropX = Math.floor(firstPassResult.topCrop.x);
+        cropY = Math.floor(firstPassResult.topCrop.y);
+        cropWidth = Math.floor(firstPassResult.topCrop.width);
+        cropHeight = Math.floor(firstPassResult.topCrop.height);
+      } else {
+        // Fallback to center square
+        const metadata = await sharp(file.filepath).metadata();
         const sourceSize = Math.min(metadata.width, metadata.height);
         cropX = Math.floor((metadata.width - sourceSize) / 2);
         cropY = Math.floor((metadata.height - sourceSize) / 2);
@@ -92,26 +97,42 @@ async function handler(req, res) {
         cropHeight = sourceSize;
       }
       
-      // Clamp crop box to image bounds
-      cropX = Math.max(0, Math.min(cropX, metadata.width - 1));
-      cropY = Math.max(0, Math.min(cropY, metadata.height - 1));
-      cropWidth = Math.min(cropWidth, metadata.width - cropX);
-      cropHeight = Math.min(cropHeight, metadata.height - cropY);
-      
-      await image
+      // Step 2: Extract and resize to 500x500, save to disk
+      await sharp(file.filepath)
         .extract({ 
           left: cropX, 
           top: cropY, 
           width: cropWidth, 
           height: cropHeight 
         })
-        .resize(350, 350, {
+        .resize(500, 500, {
           fit: 'cover',
           position: 'center',
           kernel: sharp.kernel.lanczos3,
         })
         .jpeg({ quality: 90 })
         .toFile(outputPath);
+      
+      // Step 3: Run smartcrop again on the saved 500x500 image with 500x150 target
+      const secondPassResult = await smartcrop.crop(outputPath, { 
+        width: 500, 
+        height: 150 
+      });
+      
+      if (secondPassResult && secondPassResult.topCrop) {
+        // Compute normalized focal point (center of the 500x150 crop within the 500x500 image)
+        const focalX = (secondPassResult.topCrop.x + secondPassResult.topCrop.width / 2) / 500;
+        const focalY = (secondPassResult.topCrop.y + secondPassResult.topCrop.height / 2) / 500;
+        
+        // Round to 6 decimal places for storage
+        focalPoint = {
+          x: Math.round(focalX * 1000000) / 1000000,
+          y: Math.round(focalY * 1000000) / 1000000,
+        };
+      } else {
+        // Fallback to center if second pass fails
+        focalPoint = { x: 0.5, y: 0.5 };
+      }
     } finally {
       // Always clean up temp file
       try {
@@ -121,11 +142,12 @@ async function handler(req, res) {
       }
     }
 
-    // Return public URL
+    // Return public URL and focal point
     const imageUrl = `/uploads/${newFilename}`;
     return res.status(200).json({
       success: true,
       imageUrl,
+      focalPoint,
     });
   } catch (error) {
     // Map formidable errors to appropriate HTTP status codes

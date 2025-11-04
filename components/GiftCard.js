@@ -4,6 +4,9 @@ import { createPortal } from 'react-dom';
 // Cache the confetti module import so it's only loaded once
 let confettiImportPromise = null;
 
+// Cache the smartcrop module import so it's only loaded once
+let smartcropImportPromise = null;
+
 // Internal Tooltip component
 function ToolSwitchTooltip({ targetRef, tooltipId, text, visible, onClose, placement, arrowOffset }) {
   const tooltipRef = useRef(null);
@@ -59,13 +62,18 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
   const canToggle = isAdmin || gift.canToggle;
   const boughtByMe = gift.bought && gift.canToggle;
   const toggleRef = useRef(null);
+  const imageRef = useRef(null);
+  const cardRef = useRef(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPlacement, setTooltipPlacement] = useState({ left: 0, top: 0, arrowDirection: 'up' });
   const [arrowOffset, setArrowOffset] = useState(0);
   const blurTimeoutRef = useRef(null);
+  const [focalPoint, setFocalPoint] = useState(null);
+  const focalPointProcessedRef = useRef(false);
 
   const tooltipId = `tool-switch-tooltip-${gift.id}`;
   const GLOBAL_DISMISSAL_KEY = 'tooltip-dismissed';
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Check if tooltip was previously dismissed globally (localStorage)
   const isTooltipDismissed = () => {
@@ -234,6 +242,137 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
     };
   }, []);
 
+  // Lazy focal point detection with IntersectionObserver
+  useEffect(() => {
+    if (!gift.imageUrl || !cardRef.current || focalPointProcessedRef.current) {
+      return;
+    }
+
+    const detectFocalPoint = async () => {
+      if (focalPointProcessedRef.current) return;
+      focalPointProcessedRef.current = true;
+
+      // Check localStorage cache first
+      const cacheKey = `smartcrop:${gift.imageUrl}`;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+            setFocalPoint(parsed);
+            return;
+          }
+        }
+      } catch (err) {
+        if (isDevelopment) {
+          console.error('Failed to parse cached focal point:', err);
+        }
+      }
+
+      // Check if server provided focal points
+      if (typeof gift.imageFocalX === 'number' && typeof gift.imageFocalY === 'number') {
+        const serverFocal = { x: gift.imageFocalX, y: gift.imageFocalY };
+        setFocalPoint(serverFocal);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ ...serverFocal, v: 1 }));
+        } catch (err) {
+          if (isDevelopment) {
+            console.info('[localStorage] Failed to store item :', err);
+          }
+        }
+        return;
+      }
+
+      // Server didn't provide focal point - run client-side detection
+      if (isDevelopment) {
+        console.info(`[SmartCrop] Server did not provide focal point for ${gift.imageUrl}, running client-side analysis`);
+      }
+
+      // Lazy-import smartcrop
+      if (!smartcropImportPromise) {
+        smartcropImportPromise = import('smartcrop');
+      }
+
+      try {
+        const smartcrop = await smartcropImportPromise;
+        const img = imageRef.current;
+        
+        if (!img || !img.complete || !img.naturalWidth) {
+          // Image not loaded yet, wait for it
+          await new Promise((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            }
+          });
+        }
+
+        if (!img.naturalWidth || !img.naturalHeight) {
+          throw new Error('Image failed to load');
+        }
+
+        // Run smartcrop analysis (500x150 to match server)
+        const result = await smartcrop.default.crop(img, { 
+          width: 500, 
+          height: 150 
+        });
+
+        if (result && result.topCrop) {
+          // Compute normalized focal point (center of crop)
+          const focalX = (result.topCrop.x + result.topCrop.width / 2) / img.naturalWidth;
+          const focalY = (result.topCrop.y + result.topCrop.height / 2) / img.naturalHeight;
+          
+          const focal = {
+            x: Math.round(focalX * 1000000) / 1000000,
+            y: Math.round(focalY * 1000000) / 1000000,
+          };
+
+          setFocalPoint(focal);
+          
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ ...focal, v: 1 }));
+          } catch (err) {
+            if (isDevelopment) {
+              console.info('[localStorage] Failed to store item :', err);
+            }
+          }
+        } else {
+          throw new Error('SmartCrop returned no result');
+        }
+      } catch (err) {
+        if (isDevelopment) {
+          console.error(`[SmartCrop] Failed to detect focal point for ${gift.imageUrl}, using center fallback:`, err);
+        }
+        // Fallback to center
+        setFocalPoint({ x: 0.5, y: 0.5 });
+      }
+    };
+
+    // Set up IntersectionObserver
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting || entry.intersectionRatio > 0) {
+            detectFocalPoint();
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '200px 0px',
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [gift.imageUrl, gift.imageFocalX, gift.imageFocalY, isDevelopment]);
+
   const handleToggle = () => {
     if (!canToggle) {
       alert('This item has already been marked as bought by another user.');
@@ -275,7 +414,18 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
   };
 
   return (
-    <div className={`gift-card ${gift.bought ? 'is-bought' : ''}`}>
+    <div 
+      ref={cardRef}
+      className={`gift-card ${gift.bought ? 'is-bought' : ''}`}
+      style={
+        focalPoint && gift.imageUrl
+          ? {
+              '--focal-x': `${focalPoint.x * 100}%`,
+              '--focal-y': `${focalPoint.y * 100}%`,
+            }
+          : undefined
+      }
+    >
       {gift.bought && (
         <span className={`gift-ribbon gift-ribbon--tr ${boughtByMe ? 'gift-ribbon--owner' : 'gift-ribbon--other'}`}>
           {boughtByMe ? '✨ Thank you ✨' : 'Already bought'}
@@ -285,9 +435,11 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
         <div className="image-container">
           {gift.imageUrl ? (
             <img
+              ref={imageRef}
               src={gift.imageUrl}
               alt={gift.title}
               className="gift-image"
+              crossOrigin="anonymous"
             />
           ) : (
             <div className="image-placeholder">
