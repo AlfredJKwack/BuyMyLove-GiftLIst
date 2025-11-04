@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
+// Cache the confetti module import so it's only loaded once
+let confettiImportPromise = null;
+
 // Internal Tooltip component
 function ToolSwitchTooltip({ targetRef, tooltipId, text, visible, onClose, placement, arrowOffset }) {
   const tooltipRef = useRef(null);
@@ -236,9 +239,29 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
       return;
     }
     
+    // Calculate the new state (true if marking as bought)
+    const newState = !gift.bought;
+    
     // Hide and dismiss tooltip when toggle is clicked
     hideTooltip(true);
-    onToggleBought(gift.id, !gift.bought);
+    onToggleBought(gift.id, newState);
+    
+    // Fire confetti only when marking as bought (not when unmarking)
+    if (newState) {
+      // Lazy-load confetti module (cached after first load)
+      if (!confettiImportPromise) {
+        confettiImportPromise = import('./confetti');
+      }
+      confettiImportPromise
+        .then((mod) => {
+          // Fire confetti centered on the toggle element
+          mod.fireConfettiAt(toggleRef.current, 25, 1);
+        })
+        .catch((err) => {
+          // Swallow import errors so UX isn't impacted
+          console.error('Failed to load confetti', err);
+        });
+    }
   };
 
   const formatDate = (dateString) => {
@@ -318,6 +341,7 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
             
             <label 
               ref={toggleRef}
+              style={{ position: 'relative' }}
               className={`toggle-switch ${canToggle ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
               onMouseOver={showTooltip}
               onFocus={showTooltip}
