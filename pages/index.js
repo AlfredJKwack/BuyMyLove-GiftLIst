@@ -196,7 +196,7 @@ export default function Home() {
           <div className="container">
             <div className="footer-content">
               <div className="footer-text">
-                &copy; 2025 BuyMyLove v0.4.3
+                &copy; 2025 BuyMyLove v0.5.0
               </div>
               <div className="footer-links">
                 <a href="https://github.com/AlfredJKwack/BuyMyLove-GiftLIst" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3em' }}>
