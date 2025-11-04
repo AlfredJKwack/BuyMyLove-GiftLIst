@@ -57,6 +57,7 @@ function ToolSwitchTooltip({ targetRef, tooltipId, text, visible, onClose, place
 
 export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
   const canToggle = isAdmin || gift.canToggle;
+  const boughtByMe = gift.bought && gift.canToggle;
   const toggleRef = useRef(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPlacement, setTooltipPlacement] = useState({ left: 0, top: 0, arrowDirection: 'up' });
@@ -276,7 +277,9 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
   return (
     <div className={`gift-card ${gift.bought ? 'is-bought' : ''}`}>
       {gift.bought && (
-        <span className="gift-ribbon gift-ribbon--tr">Already bought</span>
+        <span className={`gift-ribbon gift-ribbon--tr ${boughtByMe ? 'gift-ribbon--owner' : 'gift-ribbon--other'}`}>
+          {boughtByMe ? '✨ Thank you ✨' : 'Already bought'}
+        </span>
       )}
       <div className="gift-card-image">
         <div className="image-container">

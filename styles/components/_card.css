@@ -37,12 +37,14 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   pointer-events: none;
   white-space: nowrap;
+  width: 15rem;
+  text-align: center;
 }
 
 /* Top-right corner ribbon */
 .gift-ribbon--tr {
   top: 2rem;
-  right: -2.7rem;
+  right: -4.6rem;
   transform: rotate(45deg);
   transform-origin: center;
 }
@@ -53,6 +55,21 @@
   left: -2.25rem;
   transform: rotate(-45deg);
   transform-origin: center;
+}
+
+/* Owner: current visitor bought it */
+.gift-ribbon--owner {
+  background: var(--color-success);
+  color: var(--color-white);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Other users: faded banner for gifts bought by others */
+.gift-ribbon--other {
+  background: var(--color-gray-200);
+  color: var(--color-gray-400);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 /* Image section */
