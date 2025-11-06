@@ -9,3 +9,4 @@
 - [ ] Make a few themes for occasions like Christmas, Halloween, Birthdays etc. 
 - [x] If someone other than the Admin ticks a "bought" then have some festive animation with confetti fly across the screen and pop up a "jeez thanks"!
 - [ ] Make a good looking set of error pages: 404, 500, 403 etc.
+- [x] Refactor the modal to require less scrolling. The browse and Remove Image buttons could be in a left flex column while the image resides on the right. 

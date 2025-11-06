@@ -188,40 +188,15 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .gift-card {
-    /* flex-direction: column; */
-  }
   
   .gift-card-image {
-   /*  width: 100%; 
-    padding: var(--spacing-4) var(--spacing-4) var(--spacing-2) var(--spacing-4);
-    */
   }
-/*   
-  .gift-card-content {
-    border-left: none;
-    border-top: 1px solid var(--color-gray-200);
-  }
-  
-  .gift-card.is-bought {
-    border-left: none;
-    border-top: 4px solid var(--color-success);
-  }
-  */ 
 }
 
 @media (max-width: 640px) {
   .gift-ribbon {
     font-size: var(--font-size-xs);
-    /* padding: 0.25rem 1rem; */
   }
-  
-  /*
-   .gift-ribbon--tr {
-    right: -1.75rem;
-    top: 0.5rem;
-  } 
-  */
   
   .gift-ribbon--tl {
     left: -1.75rem;

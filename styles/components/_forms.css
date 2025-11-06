@@ -70,11 +70,30 @@ font-size: var(--font-size-sm);
   background-color: var(--color-danger-dark);
 }
 
-/* Image preview containers */
-.image-preview,
-.current-image {
-  display: inline-block;
-  margin-top: var(--spacing-2);
+/* Image row: controls + preview side-by-side */
+.image-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+}
+
+/* Left column: file input + buttons - take only needed width */
+.image-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.image-controls .form-button {
+  white-space: nowrap;
+  
+}
+
+/* Right column: preview - take only the space it needs */
+.image-preview-container {
+  flex: 0 0 auto; /* intrinsic width only */
+  min-width: 0;
 }
 
 .image-preview .form-button,
@@ -92,8 +111,18 @@ font-size: var(--font-size-sm);
 .preview-image,
 .current-image-preview {
   display: block;
+  height: auto;
+  object-fit: cover;
   border-radius: var(--border-radius);
   border: 1px solid var(--color-gray-300);
+}
+
+/* Small screens: stack vertically */
+@media (max-width: 640px) {
+  .image-row {
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
 }
 
 /* Form message styles */

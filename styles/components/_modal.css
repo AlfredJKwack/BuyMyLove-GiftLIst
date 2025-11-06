@@ -125,10 +125,6 @@
   margin-top: var(--spacing-1);
 }
 
-.current-image {
-  margin: var(--spacing-2) 0;
-}
-
 .current-image-preview {
   height: 8rem;
   object-fit: cover;
@@ -164,10 +160,6 @@
   color: var(--color-gray-600);
 }
 
-.image-preview {
-  margin: var(--spacing-2) 0;
-}
-
 .preview-label {
   font-size: var(--font-size-sm);
   color: var(--color-gray-600);
@@ -181,13 +173,8 @@
   border-radius: var(--border-radius);
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .form-actions button {
-    width: 100%;
-  }
+/* Image field layout */
+.image-field {
+  display: flex;
+  gap: var(--spacing-4);
 }

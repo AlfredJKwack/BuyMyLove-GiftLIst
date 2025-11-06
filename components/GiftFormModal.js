@@ -272,53 +272,51 @@ export default function GiftFormModal({ gift, onClose, onSaved }) {
               <label htmlFor="image" className="form-label">
                 Image
               </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                id="image"
-                className="form-input"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={loading || processingImage}
-              />
-              <p className="form-help">
-                Image will be center-cropped and resized to 350×350px
-              </p>
+              
+              <div className="image-field">
+                <div className="image-controls">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    id="image"
+                    className="form-input"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={loading || processingImage}
+                  />
 
-              {processingImage && (
-                <div className="image-processing">
-                  <div className="loading-spinner"></div>
-                  <span className="loading-text">Processing image...</span>
-                </div>
-              )}
+                  {processingImage && (
+                    <div className="image-processing">
+                      <div className="loading-spinner"></div>
+                      <span className="loading-text">Processing image...</span>
+                    </div>
+                  )}
 
-              {imagePreview && (
-                <div className="image-preview">
-                  <p className="preview-label">Preview:</p>
-                  <img src={imagePreview} alt="Preview" className="preview-image" />
-                  <button
-                    type="button"
-                    className="form-button form-button--danger"
-                    onClick={handleRemoveImage}
-                  >
-                    Remove Image
-                  </button>
+                  {(imagePreview || currentImageUrl) && (
+                    <button
+                      type="button"
+                      className="form-button form-button--danger"
+                      onClick={handleRemoveImage}
+                    >
+                      Remove Image
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {!imagePreview && currentImageUrl && (
-                <div className="current-image">
-                  <p className="preview-label">Current image:</p>
-                  <img src={currentImageUrl} alt="Current" className="current-image-preview" />
-                  <button
-                    type="button"
-                    className="form-button form-button--danger"
-                    onClick={handleRemoveImage}
-                  >
-                    Remove Image
-                  </button>
+                <div className="image-preview-container">
+                  {imagePreview && (
+                    <div className="image-preview">
+                      <img src={imagePreview} alt="Preview" className="preview-image" />
+                    </div>
+                  )}
+
+                  {!imagePreview && currentImageUrl && (
+                    <div className="current-image">
+                      <img src={currentImageUrl} alt="Current" className="current-image-preview" />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {error && (
