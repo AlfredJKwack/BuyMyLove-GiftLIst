@@ -1,31 +1,65 @@
 {
   "name": "buymylove-giftlist",
-  "private": true,
-  "version": "0.2.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+  "version": "0.5.1",
+  "description": "A simple gift list application where users can share their wishlist with friends and family. Visitors can mark gifts as bought to prevent duplicate purchases.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
   },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node database/migrate.js",
+    "db:setup": "npm run db:generate && npm run db:migrate",
+    "db:push": "drizzle-kit push --strict --verbose",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlfredJKwack/BuyMyLove-GiftLIst.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/AlfredJKwack/BuyMyLove-GiftLIst/issues"
+  },
+  "homepage": "https://github.com/AlfredJKwack/BuyMyLove-GiftLIst#readme",
   "devDependencies": {
-    "@playwright/test": "^1.42.1",
-    "@tailwindcss/postcss": "^4.1.8",
-    "@vitest/coverage-v8": "^1.4.0",
-    "autoprefixer": "^10.4.15",
-    "jsdom": "^24.0.0",
-    "postcss": "^8.4.29",
-    "tailwindcss": "^3.3.3",
-    "vite": "^6.3.5",
-    "vitest": "^1.4.0"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie": "^0.6.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.9.2",
+    "@types/nodemailer": "^7.0.3",
+    "@types/react": "^19.2.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.10",
-    "pica": "^9.0.1"
+    "bcryptjs": "^3.0.2",
+    "cookie": "^1.0.2",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.6",
+    "drizzle-orm": "^0.44.7",
+    "file-type": "^21.0.0",
+    "formidable": "^3.5.4",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^14.2.33",
+    "nodemailer": "^7.0.10",
+    "postgres": "^3.4.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.34.4",
+    "smartcrop": "^2.0.5",
+    "smartcrop-sharp": "^2.0.8",
+    "uuid": "^13.0.0"
+  },
+  "overrides": {
+    "smartcrop-sharp": {
+      "sharp": ">=0.32.0 <1.0.0"
+    }
   }
 }

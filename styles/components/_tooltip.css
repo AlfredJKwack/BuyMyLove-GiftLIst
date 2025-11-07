@@ -1,0 +1,83 @@
+/* Tooltip styles for tool-switch */
+.tool-switch-tooltip {
+  position: fixed;
+  z-index: var(--z-index-tooltip);
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-400);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  max-width: 200px;
+}
+
+.tool-switch-tooltip:focus {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+/* Arrow pointing to the toggle */
+.tool-switch-tooltip__arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  pointer-events: none;
+}
+
+/* Arrow pointing up (tooltip below toggle) */
+.tool-switch-tooltip__arrow--up {
+  top: -8px;
+  border-width: 0 8px 8px 8px;
+  border-color: transparent transparent var(--color-gray-200) transparent;
+}
+
+/* Arrow pointing down (tooltip above toggle) */
+.tool-switch-tooltip__arrow--down {
+  bottom: -8px;
+  border-width: 8px 8px 0 8px;
+  border-color: var(--color-gray-200) transparent transparent transparent;
+}
+
+/* Close button */
+.tool-switch-tooltip__close {
+  background-color: var(--color-danger);
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  padding: 0;
+  width: .8rem;
+  height: .8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-lg);
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.tool-switch-tooltip:hover .tool-switch-tooltip__close {
+  color: var(--color-danger-darkest);
+}
+
+.tool-switch-tooltip__close:focus {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.tool-switch-tooltip__close svg {
+  width: .6rem;
+  height: .6rem;
+}
+
+/* Text content */
+.tool-switch-tooltip__text {
+  flex: 1;
+}
