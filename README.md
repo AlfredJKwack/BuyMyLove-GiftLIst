@@ -2,7 +2,8 @@
 
 A gift list application where you can share your wishlist with friends and family. Visitors can mark gifts as bought to prevent duplicate purchases, and admins can manage the gift list.
 
-<img width="1512" height="945" alt="GiftLIst in action" src="https://github.com/user-attachments/assets/efcd4498-3458-4b1e-b6ea-11473bb7c544" />
+<img width="1508" height="939" alt="Giftlist example" src="https://github.com/user-attachments/assets/055bff1f-27bc-4567-aac9-3a45c55fa842" />
+
 
 
 ## Features
