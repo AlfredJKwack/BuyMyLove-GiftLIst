@@ -148,8 +148,7 @@ npm install --save-dev jest @testing-library/react @testing-library/jest-dom sup
 
 For detailed technical information, see:
 - [Requirements](docs/Requirements.md) - Functional requirements and user stories
-- [Technical Specification](docs/Technical_Spec.md) - API design and data models
-- [Architecture](docs/Architecture.md) - System architecture and design decisions
+- [Technical Specification](docs/Technical_Spec.md) - API 
 - [Deployment Guide](deploy/DEPLOYMENT.md) - Production deployment instructions
 
 For a thorough overview of what overengineering looks like, see [Responsive Image Implementation](docs/Responsive_Image_Implementation.md)
