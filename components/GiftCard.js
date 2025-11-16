@@ -1,62 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-
-// Cache the confetti module import so it's only loaded once
-let confettiImportPromise = null;
-
-// Cache the smartcrop module import so it's only loaded once
-let smartcropImportPromise = null;
-
-// Internal Tooltip component
-function ToolSwitchTooltip({ targetRef, tooltipId, text, visible, onClose, placement, arrowOffset }) {
-  const tooltipRef = useRef(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && visible) {
-        onClose();
-      }
-    };
-
-    if (visible) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [visible, onClose]);
-
-  if (!visible || typeof window === 'undefined') return null;
-
-  return createPortal(
-    <div
-      ref={tooltipRef}
-      id={tooltipId}
-      role="tooltip"
-      className="tool-switch-tooltip"
-      tabIndex={0}
-      style={{
-        left: `${placement.left}px`,
-        top: `${placement.top}px`,
-      }}
-    >
-      <div
-        className={`tool-switch-tooltip__arrow ${placement.arrowDirection === 'up' ? 'tool-switch-tooltip__arrow--up' : 'tool-switch-tooltip__arrow--down'}`}
-        style={{ left: `${arrowOffset}px` }}
-      />
-      <span className="tool-switch-tooltip__text">{text}</span>
-      <button
-        className="tool-switch-tooltip__close"
-        onClick={onClose}
-        aria-label="Dismiss tooltip"
-        type="button"
-      >
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.7} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>,
-    document.body
-  );
-}
+import { useRef } from 'react';
+import ToolSwitchTooltip from './ToolSwitchTooltip';
+import { useTooltipPosition } from '../hooks/useTooltipPosition';
+import { useTooltipVisibility } from '../hooks/useTooltipVisibility';
+import { useSmartCropFocalPoint } from '../hooks/useSmartCropFocalPoint';
+import { useImagePan } from '../hooks/useImagePan';
+import { fireConfettiAt } from './confetti';
 
 export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
   const canToggle = isAdmin || gift.canToggle;
@@ -64,385 +12,31 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
   const toggleRef = useRef(null);
   const imageRef = useRef(null);
   const cardRef = useRef(null);
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipPlacement, setTooltipPlacement] = useState({ left: 0, top: 0, arrowDirection: 'up' });
-  const [arrowOffset, setArrowOffset] = useState(0);
-  const blurTimeoutRef = useRef(null);
-  const [focalPoint, setFocalPoint] = useState(null);
-  const focalPointProcessedRef = useRef(false);
 
   const tooltipId = `tool-switch-tooltip-${gift.id}`;
-  const GLOBAL_DISMISSAL_KEY = 'tooltip-dismissed';
-  const isDevelopment = process.env.NODE_ENV === 'development';
 
-  // Check if tooltip was previously dismissed globally (localStorage)
-  const isTooltipDismissed = () => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(GLOBAL_DISMISSAL_KEY) === 'true';
-  };
+  // Tooltip positioning
+  const { placement, arrowOffset, calculatePosition } = useTooltipPosition(toggleRef, true);
 
-  // Calculate tooltip position with collision detection
-  const calculatePosition = useCallback(() => {
-    if (!toggleRef.current) return;
+  // Tooltip visibility and behavior
+  const { visible, showTooltip, hideTooltip, handleBlur } = useTooltipVisibility(
+    toggleRef,
+    tooltipId,
+    canToggle,
+    gift.bought
+  );
 
-    const toggleRect = toggleRef.current.getBoundingClientRect();
-    const tooltipWidth = 140; // Approximate width
-    const tooltipHeight = 48; // Approximate height
-    const arrowSize = 8;
-    const margin = 12;
+  // Smart crop focal point detection
+  const focalPoint = useSmartCropFocalPoint(
+    imageRef,
+    cardRef,
+    gift.imageUrl,
+    gift.imageFocalX,
+    gift.imageFocalY
+  );
 
-    // Calculate horizontal center position
-    const toggleCenterX = toggleRect.left + toggleRect.width / 2;
-    let left = toggleCenterX - tooltipWidth / 2;
-
-    // Horizontal collision detection
-    const viewportWidth = window.innerWidth;
-    const minLeft = 6;
-    const maxLeft = viewportWidth - tooltipWidth - 6;
-    left = Math.max(minLeft, Math.min(left, maxLeft));
-
-    // Calculate arrow offset relative to tooltip
-    const arrowLeft = toggleCenterX - left;
-    const constrainedArrowLeft = Math.max(12, Math.min(arrowLeft, tooltipWidth - 12));
-
-    // Vertical collision detection - determine if tooltip should be above or below
-    const spaceBelow = window.innerHeight - toggleRect.bottom;
-    const spaceAbove = toggleRect.top;
-    const placeBelow = spaceBelow >= tooltipHeight + margin || spaceBelow > spaceAbove;
-
-    let top;
-    let arrowDirection;
-
-    if (placeBelow) {
-      // Place below toggle
-      top = toggleRect.bottom + margin;
-      arrowDirection = 'up';
-    } else {
-      // Place above toggle
-      top = toggleRect.top - tooltipHeight - margin;
-      arrowDirection = 'down';
-    }
-
-    setTooltipPlacement({ left, top, arrowDirection });
-    setArrowOffset(constrainedArrowLeft);
-  }, []);
-
-  // Show tooltip
-  const showTooltip = useCallback(() => {
-    if (isTooltipDismissed() || !canToggle) return;
-    
-    // Never show tooltip if toggle is already checked
-    if (gift.bought) return;
-    
-    // Double-check the input element's checked state
-    if (toggleRef.current) {
-      const input = toggleRef.current.querySelector('.toggle-input');
-      if (input && input.checked) return;
-    }
-    
-    // Notify other cards to close their tooltips
-    window.dispatchEvent(new CustomEvent('tool-switch-open', { 
-      detail: { tooltipId } 
-    }));
-    
-    calculatePosition();
-    setTooltipVisible(true);
-
-    // Set aria-labelledby on the toggle input
-    if (toggleRef.current) {
-      const input = toggleRef.current.querySelector('.toggle-input');
-      if (input) {
-        input.setAttribute('aria-labelledby', tooltipId);
-      }
-    }
-  }, [calculatePosition, tooltipId, canToggle, gift.bought]);
-
-  // Hide tooltip and mark as dismissed
-  const hideTooltip = useCallback((markDismissed = false) => {
-    setTooltipVisible(false);
-
-    // Remove aria-labelledby
-    if (toggleRef.current) {
-      const input = toggleRef.current.querySelector('.toggle-input');
-      if (input) {
-        input.removeAttribute('aria-labelledby');
-      }
-    }
-
-    if (markDismissed && typeof window !== 'undefined') {
-      localStorage.setItem(GLOBAL_DISMISSAL_KEY, 'true');
-    }
-  }, [tooltipId, GLOBAL_DISMISSAL_KEY]);
-
-  // Handle blur - close tooltip only if focus leaves both toggle and tooltip
-  const handleBlur = useCallback((e) => {
-    // Clear any existing timeout
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-    }
-
-    // Use a small delay to check where focus went
-    blurTimeoutRef.current = setTimeout(() => {
-      const activeElement = document.activeElement;
-      const tooltipElement = document.getElementById(tooltipId);
-      
-      // Check if focus is on toggle or tooltip
-      const focusOnToggle = toggleRef.current?.contains(activeElement);
-      const focusOnTooltip = tooltipElement?.contains(activeElement);
-
-      if (!focusOnToggle && !focusOnTooltip) {
-        hideTooltip(false);
-      }
-    }, 10);
-  }, [tooltipId, hideTooltip]);
-
-  // Reposition on window resize/scroll
-  useEffect(() => {
-    if (!tooltipVisible) return;
-
-    const handleReposition = () => calculatePosition();
-    
-    window.addEventListener('resize', handleReposition);
-    window.addEventListener('scroll', handleReposition, true);
-
-    return () => {
-      window.removeEventListener('resize', handleReposition);
-      window.removeEventListener('scroll', handleReposition, true);
-    };
-  }, [tooltipVisible, calculatePosition]);
-
-  // Listen for other tooltips opening and close this one
-  useEffect(() => {
-    const handleOtherTooltipOpen = (event) => {
-      // If another tooltip is opening (not this one), hide this tooltip without dismissing globally
-      if (event.detail.tooltipId !== tooltipId && tooltipVisible) {
-        hideTooltip(false);
-      }
-    };
-
-    window.addEventListener('tool-switch-open', handleOtherTooltipOpen);
-    return () => {
-      window.removeEventListener('tool-switch-open', handleOtherTooltipOpen);
-    };
-  }, [tooltipId, tooltipVisible, hideTooltip]);
-
-  // Close tooltip if gift becomes bought while tooltip is visible
-  useEffect(() => {
-    if (tooltipVisible && gift.bought) {
-      hideTooltip(false);
-    }
-  }, [gift.bought, tooltipVisible, hideTooltip]);
-
-  // Cleanup blur timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (blurTimeoutRef.current) {
-        clearTimeout(blurTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Lazy focal point detection with IntersectionObserver
-  useEffect(() => {
-    if (!gift.imageUrl || !cardRef.current || focalPointProcessedRef.current) {
-      return;
-    }
-
-    const detectFocalPoint = async () => {
-      if (focalPointProcessedRef.current) return;
-      focalPointProcessedRef.current = true;
-
-      // Check localStorage cache first
-      const cacheKey = `smartcrop:${gift.imageUrl}`;
-      try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-            setFocalPoint(parsed);
-            return;
-          }
-        }
-      } catch (err) {
-        if (isDevelopment) {
-          console.error('Failed to parse cached focal point:', err);
-        }
-      }
-
-      // Check if server provided focal points
-      if (typeof gift.imageFocalX === 'number' && typeof gift.imageFocalY === 'number') {
-        const serverFocal = { x: gift.imageFocalX, y: gift.imageFocalY };
-        setFocalPoint(serverFocal);
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ ...serverFocal, v: 1 }));
-        } catch (err) {
-          if (isDevelopment) {
-            console.info('[localStorage] Failed to store item :', err);
-          }
-        }
-        return;
-      }
-
-      // Server didn't provide focal point - run client-side detection
-      if (isDevelopment) {
-        console.info(`[SmartCrop] Server did not provide focal point for ${gift.imageUrl}, running client-side analysis`);
-      }
-
-      // Lazy-import smartcrop
-      if (!smartcropImportPromise) {
-        smartcropImportPromise = import('smartcrop');
-      }
-
-      try {
-        const smartcrop = await smartcropImportPromise;
-        const img = imageRef.current;
-        
-        if (!img || !img.complete || !img.naturalWidth) {
-          // Image not loaded yet, wait for it
-          await new Promise((resolve) => {
-            if (img.complete) {
-              resolve();
-            } else {
-              img.addEventListener('load', resolve, { once: true });
-              img.addEventListener('error', resolve, { once: true });
-            }
-          });
-        }
-
-        if (!img.naturalWidth || !img.naturalHeight) {
-          throw new Error('Image failed to load');
-        }
-
-        // Run smartcrop analysis (500x150 to match server)
-        const result = await smartcrop.default.crop(img, { 
-          width: 500, 
-          height: 150 
-        });
-
-        if (result && result.topCrop) {
-          // Compute normalized focal point (center of crop)
-          const focalX = (result.topCrop.x + result.topCrop.width / 2) / img.naturalWidth;
-          const focalY = (result.topCrop.y + result.topCrop.height / 2) / img.naturalHeight;
-          
-          const focal = {
-            x: Math.round(focalX * 1000000) / 1000000,
-            y: Math.round(focalY * 1000000) / 1000000,
-          };
-
-          setFocalPoint(focal);
-          
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify({ ...focal, v: 1 }));
-          } catch (err) {
-            if (isDevelopment) {
-              console.info('[localStorage] Failed to store item :', err);
-            }
-          }
-        } else {
-          throw new Error('SmartCrop returned no result');
-        }
-      } catch (err) {
-        if (isDevelopment) {
-          console.error(`[SmartCrop] Failed to detect focal point for ${gift.imageUrl}, using center fallback:`, err);
-        }
-        // Fallback to center
-        setFocalPoint({ x: 0.5, y: 0.5 });
-      }
-    };
-
-    // Set up IntersectionObserver
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting || entry.intersectionRatio > 0) {
-            detectFocalPoint();
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '200px 0px',
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [gift.imageUrl, gift.imageFocalX, gift.imageFocalY, isDevelopment]);
-
-  // Mouse-tracking panning effect for zoomed images (desktop only)
-  useEffect(() => {
-    const img = imageRef.current;
-    const container = img?.closest('.image-container') || img?.parentElement;
-    if (!img || !container) return;
-
-    // Only enable on larger screens
-    if (typeof window === 'undefined' || window.innerWidth <= 500) return;
-
-    let active = false;
-    const scale = 1.7;
-    const fallbackFocalX = (focalPoint?.x ?? 0.5) * 100;
-    const fallbackFocalY = (focalPoint?.y ?? 0.5) * 100;
-
-    // Ensure CSS transition is set (keeps original CSS as fallback)
-    //const transition = 'transform 350ms ease';
-    //img.style.transition = transition;
-
-    const toPercent = (value) => Math.max(0, Math.min(100, value * 100));
-
-    const setOriginFromEvent = (e) => {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX !== undefined ? (e.clientX - rect.left) / rect.width : 0.5;
-      const y = e.clientY !== undefined ? (e.clientY - rect.top) / rect.height : 0.5;
-      const xp = toPercent(x);
-      const yp = toPercent(y);
-      img.style.transformOrigin = `${xp}% ${yp}%`;
-      return { xp, yp };
-    };
-
-    const handleEnter = (e) => {
-      if (window.innerWidth <= 500) return;
-      active = true;
-      setOriginFromEvent(e); // set origin to pointer pos
-      img.style.transform = `scale(${scale})`;
-    };
-
-    const handleMove = (e) => {
-      if (!active) return;
-      setOriginFromEvent(e);
-    };
-
-    const handleLeave = () => {
-      if (!active) return;
-      active = false;
-      // Keep current transform-origin so shrink is animated from last mouse pos
-      img.style.transform = 'scale(1)';
-
-      // After the transition completes, restore transform-origin to the stored focal point
-      const onTransitionEnd = (ev) => {
-        if (ev.propertyName !== 'transform') return;
-        img.style.transformOrigin = `${fallbackFocalX}% ${fallbackFocalY}%`;
-        img.removeEventListener('transitionend', onTransitionEnd);
-      };
-      img.addEventListener('transitionend', onTransitionEnd);
-    };
-
-    container.addEventListener('mouseenter', handleEnter);
-    container.addEventListener('mousemove', handleMove);
-    container.addEventListener('mouseleave', handleLeave);
-
-    return () => {
-      container.removeEventListener('mouseenter', handleEnter);
-      container.removeEventListener('mousemove', handleMove);
-      container.removeEventListener('mouseleave', handleLeave);
-      img.style.transform = ''; // restore
-      img.style.transformOrigin = ''; // restore (CSS via inline style removed)
-      img.style.transition = ''; // restore
-    };
-  }, [focalPoint]);
+  // Image pan effect
+  useImagePan(imageRef, focalPoint);
 
   const handleToggle = () => {
     if (!canToggle) {
@@ -459,19 +53,8 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
     
     // Fire confetti only when marking as bought (not when unmarking)
     if (newState) {
-      // Lazy-load confetti module (cached after first load)
-      if (!confettiImportPromise) {
-        confettiImportPromise = import('./confetti');
-      }
-      confettiImportPromise
-        .then((mod) => {
-          // Fire confetti centered on the toggle element
-          mod.fireConfettiAt(toggleRef.current, 25, 1);
-        })
-        .catch((err) => {
-          // Swallow import errors so UX isn't impacted
-          console.error('Failed to load confetti', err);
-        });
+      // Fire confetti centered on the toggle element
+      fireConfettiAt(toggleRef.current, 25, 1);
     }
   };
 
@@ -569,8 +152,8 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
               ref={toggleRef}
               style={{ position: 'relative' }}
               className={`toggle-switch ${canToggle ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-              onMouseOver={showTooltip}
-              onFocus={showTooltip}
+              onMouseOver={() => showTooltip(calculatePosition)}
+              onFocus={() => showTooltip(calculatePosition)}
               onBlur={handleBlur}
             >
               <input
@@ -590,9 +173,9 @@ export default function GiftCard({ gift, onToggleBought, isAdmin, onEdit }) {
         targetRef={toggleRef}
         tooltipId={tooltipId}
         text="Mark as bought"
-        visible={tooltipVisible}
+        visible={visible}
         onClose={() => hideTooltip(true)}
-        placement={tooltipPlacement}
+        placement={placement}
         arrowOffset={arrowOffset}
       />
     </div>
