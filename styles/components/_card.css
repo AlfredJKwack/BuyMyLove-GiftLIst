@@ -95,12 +95,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-normal);
+  object-position: var(--focal-x, 50%) var(--focal-y, 50%);
+  transform-origin: var(--focal-x, 50%) var(--focal-y, 50%);
+  transition: transform var(--transition-slow) ease;
 }
 
-.gift-card:hover .gift-image {
-  transform: scale(1.05);
-}
+/* Note: Zoom and panning effect is now handled by JavaScript in GiftCard.js */
 
 .image-placeholder {
   position: absolute;
