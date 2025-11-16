@@ -135,11 +135,13 @@
 .gift-grid {
   display: grid;
   gap: var(--spacing-6);
-  grid-template-columns: repeat(1, minmax(0, 1fr));
+  grid-template-columns: minmax(auto, 640px);
+  justify-content: center; /* Centers the single column content */
 }
 
 @media (min-width: 1013px) {
   .gift-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* Two-column layout */
+    justify-content: normal;
   }
 }
